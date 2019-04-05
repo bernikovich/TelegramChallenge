@@ -1,7 +1,4 @@
 //
-//  ChartValueBoxView.swift
-//  TeleGraph
-//
 //  Created by Timur Bernikovich on 3/20/19.
 //  Copyright © 2019 Timur Bernikovich. All rights reserved.
 //
@@ -10,6 +7,8 @@ import UIKit
 
 final class ChartValueBoxView: BaseView {
 
+    var lastDate: Date?
+    
     override func setup() {
         super.setup()
 
@@ -27,7 +26,8 @@ final class ChartValueBoxView: BaseView {
     }
 
     func update(date: Date, lines: [Line], index: Int) {
-
+        lastDate = date
+        
         let dayMonth = ChartValueBoxView.dayMonthFormatter.string(from: date)
         let year = ChartValueBoxView.yearFormatter.string(from: date)
         let dateString = NSMutableAttributedString()

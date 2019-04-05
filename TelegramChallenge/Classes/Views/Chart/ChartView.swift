@@ -66,7 +66,21 @@ final class ChartView: BaseView {
     
     private let transformCalculator = TransformCalculator()
     private var valueBoxHandler: ChartValueBoxHandler?
+    
+    // https://stackoverflow.com/questions/41904724/using-available-with-stored-properties
+    private var storedFeedbackGenerator: Any?
+    @available(iOS 10.0, *)
+    private var feedbackGenerator: UISelectionFeedbackGenerator {
+        if let generator = storedFeedbackGenerator as? UISelectionFeedbackGenerator {
+            return generator
+        }
 
+        let generator = UISelectionFeedbackGenerator()
+        generator.prepare()
+        storedFeedbackGenerator = generator
+        return generator
+    }
+    
     override func setup() {
         super.setup()
         
@@ -454,9 +468,12 @@ private extension ChartView {
         let safeIndex = (0...(chart.legend.values.count - 1)).clamp(index)
         let x = gesture.location(in: parent).x
 
+        weak var weakSelf = self
         func update(handler: ChartValueBoxHandler) {
             let box = handler.box
-            box.update(date: chart.legend.values[safeIndex], lines: visibleLines, index: safeIndex)
+            let newDate = chart.legend.values[safeIndex]
+            let updated = box.lastDate != newDate
+            box.update(date: newDate, lines: visibleLines, index: safeIndex)
             let clampedX = ((box.frame.width / 2 + 4)...(parent.frame.width - 4 - box.frame.width / 2)).clamp(x)
             box.center = CGPoint(x: clampedX, y: box.frame.height / 2 + 8)
 
@@ -465,6 +482,12 @@ private extension ChartView {
             line.frame.size.height = linesContainerView.frame.height
             line.center = CGPoint(x: lineX, y: linesContainerView.frame.height / 2)
             line.setupWithLines(visibleLines, index: safeIndex, range: plot.range)
+            
+            if #available(iOS 10.0, *) {
+                if updated {
+                    weakSelf?.feedbackGenerator.selectionChanged()
+                }
+            }
         }
 
         switch state {
@@ -482,6 +505,9 @@ private extension ChartView {
             }
             update(handler: handler)
         case .cancelled, .ended, .failed, .possible:
+            valueBoxHandler?.hide(animated: true)
+            break
+        @unknown default:
             break
         }
     }

@@ -1,7 +1,4 @@
 //
-//  HeaderView.swift
-//  TeleGraph
-//
 //  Created by Timur Bernikovich on 3/21/19.
 //  Copyright © 2019 Timur Bernikovich. All rights reserved.
 //

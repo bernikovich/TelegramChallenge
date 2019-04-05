@@ -88,6 +88,7 @@ class PlotTextLayer: CALayer, AppearanceSupport {
             textLayer.backgroundColor = theme.main.withAlphaComponent(0.75).cgColor
         }
     }
+
 }
 
 class PlotLineLayer: CALayer, AppearanceSupport {

@@ -1,7 +1,4 @@
 //
-//  BaseTableViewCell.swift
-//  TeleGraph
-//
 //  Created by Timur Bernikovich on 3/11/19.
 //  Copyright © 2019 Timur Bernikovich. All rights reserved.
 //
