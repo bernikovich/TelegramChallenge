@@ -28,11 +28,18 @@ private class LegendLabel: UILabel {
             text = item?.content.string
         }
     }
+    override func sizeToFit() {
+        super.sizeToFit()
+        
+        var rect = frame
+        rect.size.width += 4
+        frame = rect
+    }
 }
 
 final class LegendView: BaseView {
 
-    private let scrollView = UIScrollView()
+    let scrollView = UIScrollView()
     private let leadingFadeView: GradientView = {
         let view = GradientView()
         view.gradientLayer.startPoint = CGPoint(x: 0, y: 0)
@@ -89,11 +96,12 @@ final class LegendView: BaseView {
             return
         }
         
+        let visibleWidth = scrollView.frame.width - scrollView.contentInset.left - scrollView.contentInset.right
         let selectedWidth = range.upperBound - range.lowerBound
-        let contentWidth = scrollView.frame.width / selectedWidth
+        let contentWidth = visibleWidth / selectedWidth
         
         scrollView.contentSize = CGSize(width: contentWidth, height: scrollView.frame.height)
-        scrollView.contentOffset = CGPoint(x: contentWidth * range.lowerBound, y: 0)
+        scrollView.contentOffset = CGPoint(x: contentWidth * range.lowerBound - scrollView.contentInset.left, y: 0)
 
         relayoutValues(range: range)
         self.range = range
@@ -110,19 +118,17 @@ final class LegendView: BaseView {
     }
 
     private func relayoutValues(range: ClosedRange<CGFloat>) {
-        let width = scrollView.contentSize.width - 2 * Constants.horizontalInset
+        let width = scrollView.contentSize.width
         guard width > 0 else {
             return
         }
 
-        let maxSpacing = (scrollView.frame.width - 2 * Constants.horizontalInset) / Constants.maxSpaceDelimeter
+        let visibleSpace = scrollView.frame.width - scrollView.contentInset.left - scrollView.contentInset.right
+        let maxSpacing = visibleSpace / Constants.maxSpaceDelimeter
         let minItemsCount = width / maxSpacing
         let maxFilterFactor = Double(items.count) / Double(minItemsCount)
         let filterFactor = Int(pow(Double(2), round(log2(maxFilterFactor))))
-        let filteredItems = items.reversed().enumerated()
-            .filter { $0.offset % filterFactor == 0 }
-            .map { $0.element }
-            .reversed()
+        let filteredItems = items.reversed().enumerated().compactMap { $0.offset % filterFactor == 0 ? $0.element : nil }
 
         let spacing = width / CGFloat(items.count - 1)
 
@@ -134,20 +140,21 @@ final class LegendView: BaseView {
             let label = labelsPool.dequeue()
             label.alpha = 0
             label.font = UIFont.systemFont(ofSize: 12)
+            label.textAlignment = .center
             label.item = $0
             label.sizeToFit()
             scrollView.addSubview(label)
             UIView.animate(withDuration: SharedConstants.animationDuration, animations: {
                 label.alpha = 1
             })
-            
+
             return label
         }
         labels += missingLabels
         if !missingLabels.isEmpty {
             apply(theme: Appearance.theme)
         }
-        
+
         let labelsToRemove = labels.filter {
             if let item = $0.item {
                 return !filteredItems.contains(item)
@@ -157,6 +164,15 @@ final class LegendView: BaseView {
         }
         labels = labels.filter { !labelsToRemove.contains($0) }
 
+        // FIX ME LATER:
+        // When quickly scaling chart down legend values overlap.
+        if !labelsToRemove.isEmpty && !fadeLabels.isEmpty {
+            fadeLabels.forEach {
+                $0.removeFromSuperview()
+            }
+            fadeLabels.removeAll()
+        }
+        
         fadeLabels.append(contentsOf: labelsToRemove)
         UIView.animate(withDuration: SharedConstants.animationDuration, animations: {
             labelsToRemove.forEach { $0.alpha = 0 }
@@ -171,7 +187,7 @@ final class LegendView: BaseView {
         })
 
         (labels + fadeLabels).forEach { label in
-            let x = CGFloat(indexForLabel(label) ?? 0) * spacing + Constants.horizontalInset
+            let x = CGFloat(indexForLabel(label) ?? 0) * spacing
             let y = scrollView.frame.height / 2
             label.center = CGPoint(x: x, y: y)
         }
@@ -206,6 +222,5 @@ extension LegendView: AppearanceSupport {
 private enum Constants {
 
     static let maxSpaceDelimeter: CGFloat = 4
-    static let horizontalInset: CGFloat = 36
 
 }

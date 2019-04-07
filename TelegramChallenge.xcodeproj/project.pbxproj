@@ -24,6 +24,7 @@
 		B01D39A4224178A800B5E8BF /* TransformCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01D39A3224178A800B5E8BF /* TransformCalculator.swift */; };
 		B05548A6223A62100078E989 /* PlotCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B05548A5223A62100078E989 /* PlotCalculator.swift */; };
 		B06795712244F17E008461F6 /* CoreGraphics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B06795702244F17E008461F6 /* CoreGraphics.swift */; };
+		B0E04965225A6FE60053FAAB /* UIDeviceExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0E04964225A6FE60053FAAB /* UIDeviceExtensions.swift */; };
 		B0F0086022368C2A00E2CD74 /* UIKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0F0085F22368C2A00E2CD74 /* UIKit.swift */; };
 		B0F008652237C32000E2CD74 /* ChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0F008642237C32000E2CD74 /* ChartView.swift */; };
 		B0F008692237F11D00E2CD74 /* PlotLineLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0F008682237F11D00E2CD74 /* PlotLineLayer.swift */; };
@@ -64,6 +65,7 @@
 		B01D39A3224178A800B5E8BF /* TransformCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformCalculator.swift; sourceTree = "<group>"; };
 		B05548A5223A62100078E989 /* PlotCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlotCalculator.swift; sourceTree = "<group>"; };
 		B06795702244F17E008461F6 /* CoreGraphics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreGraphics.swift; sourceTree = "<group>"; };
+		B0E04964225A6FE60053FAAB /* UIDeviceExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIDeviceExtensions.swift; sourceTree = "<group>"; };
 		B0F0085F22368C2A00E2CD74 /* UIKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIKit.swift; sourceTree = "<group>"; };
 		B0F008642237C32000E2CD74 /* ChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartView.swift; sourceTree = "<group>"; };
 		B0F008682237F11D00E2CD74 /* PlotLineLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlotLineLayer.swift; sourceTree = "<group>"; };
@@ -159,9 +161,17 @@
 			path = Math;
 			sourceTree = "<group>";
 		};
+		B0E04966225A91060053FAAB /* FilterSwitch */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = FilterSwitch;
+			sourceTree = "<group>";
+		};
 		B0F008662237F0EE00E2CD74 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				B0E04966225A91060053FAAB /* FilterSwitch */,
 				96EB72B9225753B8008C2360 /* GradientView */,
 				2FDCCDB32242BF9300B69920 /* ValueBox */,
 				2FC9683D223BE8CF00839404 /* Legend */,
@@ -292,6 +302,7 @@
 			children = (
 				B06795702244F17E008461F6 /* CoreGraphics.swift */,
 				B0F037D9223678240085ACE6 /* UIColorExtensions.swift */,
+				B0E04964225A6FE60053FAAB /* UIDeviceExtensions.swift */,
 				B0F037E32236821F0085ACE6 /* UITableViewExtensions.swift */,
 				B0F0085F22368C2A00E2CD74 /* UIKit.swift */,
 				2F39537A22397C8600AD3673 /* RangeExtensions.swift */,
@@ -426,6 +437,7 @@
 				B0F037EA223682720085ACE6 /* ChartTableViewCell.swift in Sources */,
 				B0F008692237F11D00E2CD74 /* PlotLineLayer.swift in Sources */,
 				B0F037DA223678240085ACE6 /* UIColorExtensions.swift in Sources */,
+				B0E04965225A6FE60053FAAB /* UIDeviceExtensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

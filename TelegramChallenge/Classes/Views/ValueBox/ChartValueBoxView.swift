@@ -89,12 +89,14 @@ private extension ChartValueBoxView {
     static let dayMonthFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         return formatter
     }()
 
     static let yearFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         return formatter
     }()
 }

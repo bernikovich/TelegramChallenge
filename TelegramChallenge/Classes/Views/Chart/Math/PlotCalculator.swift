@@ -23,11 +23,13 @@ extension Plot {
 
 class PlotCalculator {
     let numberOfSteps: Double
+    let numberOfChunks: Int
 
     private var currentPlots: [Plot] = []
 
-    init(numberOfSteps: Double = 1) {
+    init(numberOfSteps: Double = 1, numberOfChunks: Int) {
         self.numberOfSteps = numberOfSteps
+        self.numberOfChunks = numberOfChunks
     }
 
     func verticalPlot(for range: ClosedRange<CGFloat>) -> Plot {
@@ -36,27 +38,45 @@ class PlotCalculator {
         let upperIndex = Int(ceil(CGFloat(count) * range.upperBound))
         let safeRange = (lowerIndex..<upperIndex).clamped(to: 0..<count)
         let plots = Array(currentPlots[safeRange])
-        let maxPlot = plots.max(by: { $0.range.upperBound < $1.range.upperBound }) ?? plots[0]
-        return maxPlot
+        let maxPlot = plots.max(by: { $0.range.upperBound < $1.range.upperBound })
+        let anyOtherPlot = plots.isEmpty ? Plot(range: 0...1, step: 1) : plots[0]
+        return maxPlot ?? anyOtherPlot
     }
 
     func updatePreloadedPlots(lines: [Line]) {
-        let chunks = 20
-        let delta = 1 / CGFloat(chunks)
-
+        let delta = 1 / CGFloat(numberOfChunks)
+        
         var plots: [Plot] = []
-        for i in 0..<chunks {
-            let start = CGFloat(i) * delta
-            let range = (CGFloat(i) * delta)...(start + delta)
-            let maxValue = lines
-                .map { $0.valuesInRange(range).max() ?? 0}
-                .max() ?? 0
-            let minValue = lines
-                .map { $0.valuesInRange(range).min() ?? 0}
-                .min() ?? 0
-            plots.append(verticalPlot(for: [minValue, maxValue], origin: origin(for: lines.flatMap({ $0.values }))))
+        
+        let minValue = lines.compactMap({ $0.minValue }).min()
+        let maxValue = lines.compactMap({ $0.maxValue }).max()
+        
+        let origin: Int64
+        if let minValue = minValue, let maxValue = maxValue {
+            origin = prefferedOrigin(minValue: minValue, maxValue: maxValue)
+        } else {
+            origin = 0
         }
-        self.currentPlots = plots
+        
+        for index in 0..<numberOfChunks {
+            let start = CGFloat(index) * delta
+            let end = start + delta
+            
+            let range = start...end
+            
+            var minValue: Int64?
+            var maxValue: Int64?
+            lines.forEach {
+                let valuesRange = $0.valuesRangeInRange(range)
+                minValue = min(minValue ?? Int64.max, valuesRange.lowerBound)
+                maxValue = max(maxValue ?? Int64.min, valuesRange.upperBound)
+            }
+            
+            let plot = verticalPlot(for: [minValue ?? 0, maxValue ?? 1], origin: origin)
+            plots.append(plot)
+        }
+        
+        currentPlots = plots
     }
     
     private func verticalPlot(for values: [Int64], origin: Int64) -> Plot {
@@ -91,11 +111,7 @@ class PlotCalculator {
         return Plot(range: origin...maxValue, step: roundedStep)
     }
     
-    private func origin(for values: [Int64]) -> Int64 {
-        guard let maxValue = values.max(), var minValue = values.min() else {
-            return 0
-        }
-        
+    private func prefferedOrigin(minValue: Int64, maxValue: Int64) -> Int64 {
         guard minValue != maxValue else {
             return minValue
         }
@@ -110,8 +126,9 @@ class PlotCalculator {
         let log = log10(Double(delta))
         let power = Double(Int(log))
         let roundBase = Int64(pow(10, power)) // Doesn't really work for case [3999, 5000] min -> 3000
-        minValue = Double(minValue).floor(base: roundBase)
-        return minValue
+        let origin = Double(minValue).floor(base: roundBase)
+
+        return origin
     }
 }
 

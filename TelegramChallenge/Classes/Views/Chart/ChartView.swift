@@ -38,7 +38,7 @@ class ChartLineLayer: CAShapeLayer {
 
 final class ChartView: BaseView {
     
-    var isSimple = false
+    let isSimple: Bool
     
     private(set) var chart: Chart = .empty
     private(set) var visibleLines: [Line] = []
@@ -60,7 +60,9 @@ final class ChartView: BaseView {
     private var linePaths: [CGPath] = []
     private var lineLayers: [ChartLineLayer] = []
     
-    private let plotCalculator = PlotCalculator(numberOfSteps: 5.5) // According to provided screenshots.
+    // According to provided screenshots.
+    private lazy var plotCalculator = PlotCalculator(numberOfSteps: 5.5, numberOfChunks: self.isSimple ? 1 : 20)
+    
     private var plot: Plot?
     private var oldPlot: Plot?
     
@@ -79,6 +81,14 @@ final class ChartView: BaseView {
         generator.prepare()
         storedFeedbackGenerator = generator
         return generator
+    }
+    
+    init(simplified: Bool) {
+        isSimple = simplified
+        super.init(frame: .zero)
+    }
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
     override func setup() {
@@ -133,7 +143,7 @@ final class ChartView: BaseView {
         self.chart = chart
         self.visibleLines = chart.lines
         self.range = range
-        self.plotCalculator.updatePreloadedPlots(lines: visibleLines)
+        plotCalculator.updatePreloadedPlots(lines: visibleLines)
         
         redrawAll(animated: animated)
     }
@@ -142,10 +152,10 @@ final class ChartView: BaseView {
         guard self.visibleLines != visibleLines else {
             return
         }
-        
+
         hideValueBox(animated: animated)
         self.visibleLines = visibleLines
-        
+
         let hasData = !visibleLines.isEmpty
         UIView.animate(withDuration: animated ? SharedConstants.animationDuration : 0) {
             zip(self.chart.lines, self.lineLayers).forEach { line, layer in
@@ -154,11 +164,11 @@ final class ChartView: BaseView {
         }
 
         if hasData {
-            self.plotCalculator.updatePreloadedPlots(lines: visibleLines)
+            plotCalculator.updatePreloadedPlots(lines: visibleLines)
             updateWithRange(range, forceReload: true, animated: animated)
         }
     }
-    
+
     func updateWithRange(_ range: ClosedRange<CGFloat>, forceReload: Bool, animated: Bool) {
         // We hide value box on each range update.
         hideValueBox(animated: animated)
@@ -207,7 +217,7 @@ final class ChartView: BaseView {
             let layer = lineLayers[index]
             let originalPath = linePaths[index]
             let supaPath = transformCalculator.pathForLine(line)
-            
+
             // If layer is not visible and doesn't have hiding animation.
             var shouldStartNewAnimation = oldPlot != plot && animated
             if !visibleLines.contains(line) && layer.opacity == 0 && (layer.animationKeys()?.isEmpty ?? true) {
@@ -223,7 +233,7 @@ final class ChartView: BaseView {
             // Visible path.
             let visiblePath = (layer.presentation() ?? layer).path?.fittedToWidth(1)
             let updatedVisiblePath = visiblePath?.copy(using: &horizontalTransform)
-            
+
             // Check if there is currently runnning animation.
             let oldAnimation = layer.animation(forKey: key) as? ChartAnimation
             if oldAnimation != nil || shouldStartNewAnimation {
@@ -236,7 +246,7 @@ final class ChartView: BaseView {
                 CATransaction.performWithoutAnimation {
                     layer.path = newPath
                 }
-                
+
                 // CAAnimation doesn't update presentation instantly.
                 // It mean that presentation layer can update
                 // properties with delay.
@@ -250,7 +260,7 @@ final class ChartView: BaseView {
                     let elapsedTime = layerTime - animationStarted
                     var progress = elapsedTime / runningAnimation.duration
                     progress = min(1, max(0, progress))
-                    
+
                     // Interpolate possible real value based on
                     // time animation start, it's duration and from/to values.
                     let fromValue = runningAnimation.fromValue as! CGPath
@@ -258,16 +268,15 @@ final class ChartView: BaseView {
                     let visiblePath = fromValue.transformingPolyline(to: toValue, with: CGFloat(progress)).fittedToWidth(1)
                     let updatedVisiblePath = visiblePath.copy(using: &horizontalTransform)
                     animation.fromValue = updatedVisiblePath
-                    
+
                     // NOTE: Shit is here.
                     // Old phones cannot animate path with large number
                     // of points correctly. Presentation layer delays updates too much.
                     let timeLeft = runningAnimation.duration - elapsedTime
-                    let fastDevice = UIDevice.current.userInterfaceIdiom == .phone && min(UIScreen.main.bounds.height, UIScreen.main.bounds.width) > 320
-                    if line.values.count < 300 || fastDevice {
+                    if line.values.count < 300 || !UIDevice.isOld {
                         animation.duration = timeLeft
                     }
-                    
+
                     if timeLeft < 0 {
                         shouldRemoveAnimation = true
                     }
@@ -364,7 +373,7 @@ final class ChartView: BaseView {
         let missingValues = plot.lineValues.filter {
             !oldLineValues.contains($0)
         }
-        
+
         let neededLineLayers = plotLineLayers.filter { plot.lineValues.contains($0.value) }
         let unneededLineLayers = plotLineLayers.filter { !plot.lineValues.contains($0.value) }
         let newLineLayers: [PlotItemLayer] = missingValues.map {
@@ -379,9 +388,9 @@ final class ChartView: BaseView {
             return PlotItemLayer(text: text, line: line)
         }
         plotLineLayers += newLineLayers
-        
+
         let allLineLayers = (neededLineLayers + unneededLineLayers + newLineLayers)
-        
+
         // Update frames.
         // TODO: Need to think about ChartView frame update too.
         let height = ceil(bounds.height / CGFloat(plot.range.upperBound - plot.range.lowerBound) * CGFloat(plot.step))
@@ -395,7 +404,7 @@ final class ChartView: BaseView {
             applyTransform(to: $0.text)
             applyTransform(to: $0.line)
         }
-        
+
         allLineLayers.forEach { lineItemLayer in
             let transformToValue = transformCalculator.transformForValueLine(value: lineItemLayer.text.value, plot: plot, boundsHeight: bounds.height).transform3D
             guard animated else {
@@ -405,15 +414,15 @@ final class ChartView: BaseView {
             }
             let isNew = newLineLayers.map({ $0.text }).contains(lineItemLayer.text)
             let isUnneeded = unneededLineLayers.map({ $0.text }).contains(lineItemLayer.text)
-            
+
             var animations: [CAAnimation] = []
-            
+
             let opacityAnimation = CAKeyframeAnimation(keyPath: "opacity")
-            
+
             let opacityFromValue: Float = isNew ? 0.1 : (lineItemLayer.text.presentation() ?? lineItemLayer.text).opacity
             let opacityToValue: Float = isUnneeded ? 0 : 1
             let opacityMidValue: Float = isNew ? 0.4 : opacityToValue
-            
+
             opacityAnimation.values = [opacityFromValue, opacityMidValue, opacityToValue]
             opacityAnimation.keyTimes = [0, 0.5, 1]
             animations.append(opacityAnimation)
@@ -424,12 +433,12 @@ final class ChartView: BaseView {
             transformAnimation.values = [transformFromValue, transformToValue]
             transformAnimation.keyTimes = [0, 1]
             animations.append(transformAnimation)
-            
+
             CATransaction.performWithoutAnimation {
                 lineItemLayer.apply(opacity: opacityToValue)
                 lineItemLayer.apply(transform: transformToValue)
             }
-            
+
             let animation = CAAnimationGroup()
             animation.animations = animations
             animation.duration = SharedConstants.animationDuration
@@ -525,12 +534,23 @@ extension ChartView: UIGestureRecognizerDelegate {
 }
 
 extension Line {
-    func valuesInRange(_ range: ClosedRange<CGFloat>) -> [Int64] {
+    func valuesRangeInRange(_ range: ClosedRange<CGFloat>) -> ClosedRange<Int64> {
         let length = CGFloat(values.count)
         let lowerBound = Int(range.lowerBound * length)
-        let upperBound = min(values.count, Int(range.upperBound * length))
-        return Array(values[lowerBound..<upperBound])
+        let upperBound = min(values.count, Int(ceil(range.upperBound * length)))
+        let slice = values[lowerBound..<upperBound]
+        let minValue = slice.min() ?? 0
+        let maxValue = slice.max() ?? 1
+        return minValue...maxValue
     }
+    
+//    func valuesInRange(_ range: ClosedRange<CGFloat>) -> [Int64] {
+//        let length = CGFloat(values.count)
+//        let lowerBound = Int(range.lowerBound * length)
+//        let upperBound = min(values.count, Int(ceil(range.upperBound * length)))
+//        let valuesInRange = Array(values[lowerBound..<upperBound])
+//        return valuesInRange
+//    }
 }
 
 extension ChartView: AppearanceSupport {

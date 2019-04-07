@@ -38,7 +38,6 @@ final class TrimmerView: BaseView {
 
     override func setup() {
         super.setup()
-        self.chartView.isSimple = true
         self.chartView.mask = trimRangeView
         addSubview(chartView)
         addSubview(fadeView)
@@ -92,7 +91,7 @@ final class TrimmerView: BaseView {
         )
     }
 
-    private let chartView = ChartView()
+    private let chartView = ChartView(simplified: true)
     private let fadeView = UIView()
     private let trimRangeView = TrimRangeView()
     private var gestureAnchor: CGPoint?

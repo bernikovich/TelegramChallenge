@@ -8,6 +8,8 @@ import UIKit
 struct Path {
     let points: [CGPoint]
     let values: [Int64]
+    let minValue: Int64?
+    let maxValue: Int64?
 }
 
 extension Path {
@@ -30,12 +32,13 @@ extension Path {
 
 class TransformCalculator {
     // Path represents line in 1x1 coordinates.
+    // Can be moved to background for optimization.
     func pathForLine(_ line: Line, coordinateSystemSize: CGSize = CGSize(width: 1, height: 1)) -> Path {
         let numberOfSegments = line.values.count - 1
         let segmentWidth = Double(coordinateSystemSize.width) / Double(max(1, numberOfSegments))
         
-        let minValue = line.values.min() ?? 0
-        let maxValue = line.values.max() ?? 1
+        let minValue = line.minValue ?? 0
+        let maxValue = line.maxValue ?? 1
         let verticalRange = minValue != maxValue ? Double(maxValue - minValue) : 1
         
         let points = line.values.enumerated().map { index, value -> CGPoint in
@@ -44,7 +47,7 @@ class TransformCalculator {
             return CGPoint(x: x, y: y)
         }
         
-        return Path(points: points, values: line.values)
+        return Path(points: points, values: line.values, minValue: minValue, maxValue: maxValue)
     }
     
     // Plot should be in 1x1 coordinates.

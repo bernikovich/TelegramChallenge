@@ -18,6 +18,19 @@ struct Line: Hashable {
     let name: String
     let colorHex: String
     let values: [Int64]
+    
+    // For optimization purpose.
+    let minValue: Int64?
+    let maxValue: Int64?
+    
+    init(name: String, colorHex: String, values: [Int64]) {
+        self.name = name
+        self.colorHex = colorHex
+        self.values = values
+        
+        self.minValue = values.min()
+        self.maxValue = values.max()
+    }
 }
 
 extension Chart {

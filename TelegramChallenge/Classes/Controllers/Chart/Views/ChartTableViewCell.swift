@@ -59,7 +59,9 @@ final class ChartTableViewCell: BaseTableViewCell, Identifiable {
         )
 
         if legendFrame != legendView.frame {
+            let inset = UIEdgeInsets(top: 0, left: UIConstants.horizontalInset, bottom: 0, right: UIConstants.horizontalInset)
             legendView.frame = legendFrame
+            legendView.scrollView.contentInset = inset
             legendView.update(range: trimmerView.selectedRange)
         }
 
@@ -125,7 +127,7 @@ final class ChartTableViewCell: BaseTableViewCell, Identifiable {
     }
 
     private var viewModel: ChartViewModel?
-    private let chartView = ChartView()
+    private let chartView = ChartView(simplified: false)
     private let legendView = LegendView()
     private let trimmerView = TrimmerView()
     private let emptyLabel = UILabel()
@@ -151,7 +153,8 @@ private extension ChartTableViewCell {
 
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMM dd"
+        formatter.dateFormat = "d MMM"
+        formatter.locale = Locale(identifier: "en_US_POSIX") // Simplification.
         return formatter
     }()
 }

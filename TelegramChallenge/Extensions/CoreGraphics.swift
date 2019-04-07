@@ -55,11 +55,7 @@ extension CGFloat {
     static let epsilon: CGFloat = 0.00000001
 }
 
-extension CGPath {
-    var maxY: CGFloat {
-        return getPathElementsPoints().map({ $0.y }).max() ?? 0
-    }
-    
+extension CGPath {    
     func fittedToWidth(_ width: CGFloat) -> CGPath {
         let points = getPathElementsPoints()
         guard let max = points.map({ $0.x }).max(), max > CGFloat.epsilon else {
