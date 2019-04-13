@@ -39,6 +39,15 @@ private class LegendLabel: UILabel {
 
 final class LegendView: BaseView {
 
+    private let chartType: ChartType
+    init(chartType: ChartType) {
+        self.chartType = chartType
+        super.init(frame: .zero)
+    }
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     let scrollView = UIScrollView()
     private let leadingFadeView: GradientView = {
         let view = GradientView()
@@ -214,7 +223,13 @@ extension LegendView: AppearanceSupport {
         trailingFadeView.gradientLayer.uiColors = fadeGradient
         
         (labels + fadeLabels).forEach {
-            $0.textColor = theme.chartLineText
+            switch chartType {
+            case .lines, .twoLines:
+                $0.textColor = theme.lineChartPlotText
+            case .bars, .singleBar, .percent:
+                $0.textColor = theme.barChartPlotXAxisText
+            }
+            
         }
     }
 }

@@ -8,7 +8,7 @@ import UIKit
 class BaseTableViewController: BaseViewController {
     
     let tableView: UITableView = {
-        let view = UITableView(frame: .zero, style: .grouped)
+        let view = DebugTableView(frame: .zero, style: .grouped)
         return view
     }()
     
@@ -27,4 +27,12 @@ class BaseTableViewController: BaseViewController {
         tableView.separatorColor = theme.separator
     }
 
+}
+
+class DebugTableView: UITableView {
+    
+    override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        return super.gestureRecognizerShouldBegin(gestureRecognizer)
+    }
+    
 }

@@ -26,17 +26,26 @@ final class ChartFetchService {
     }
     
     private static func decodedCharts() throws -> [CodableChart] {
-        guard let chartsURL = chartsResourceURL() else {
-            return []
+        let chartsURLs = chartsResourceURLs()
+        var charts: [CodableChart] = []
+        try chartsURLs.forEach {
+            guard let chartURL = $0 else {
+                return
+            }
+            
+            let data = try Data(contentsOf: chartURL)
+            let decoder = JSONDecoder()
+            let chart = try decoder.decode(CodableChart.self, from: data)
+            charts.append(chart)
         }
         
-        let data = try Data(contentsOf: chartsURL)
-        let decoder = JSONDecoder()
-        return try decoder.decode([CodableChart].self, from: data)
+        return charts
     }
     
-    private static func chartsResourceURL() -> URL? {
-        return Bundle.main.url(forResource: "chart_data", withExtension: "json")
+    private static func chartsResourceURLs() -> [URL?] {
+        let folders = ["1", "2", "3", "4", "5"]
+        let mainJson = "overview"
+        return folders.map { Bundle.main.url(forResource: "Data/\($0)/\(mainJson)", withExtension: "json") }
     }
     
 }
@@ -51,15 +60,25 @@ private extension Chart {
         
         legend = Legend(values: legendColumn.values.compactMap { Date(timeIntervalSince1970: Double($0) / 1000) })
         
-        let lineIds = chart.types.filter({ $0.value == "line" }).map({ $0.key })
-        lines = lineIds.compactMap({ identifier -> Line? in
+        
+        let lineIds = chart.types.filter({ $0.value != "x" }).map({ $0.key }).sorted()
+        columns = lineIds.compactMap({ identifier -> Column? in
             guard let name = chart.names[identifier],
+                let styleName = chart.types[identifier],
                 let colorHex = chart.colors[identifier],
                 let values = chart.columns.first(where: { $0.id == identifier })?.values else {
                     return nil
             }
-            return Line(name: name, colorHex: colorHex, values: values)
-        }).sorted(by: { $0.name < $1.name })
+            guard let style = Column.Style(rawValue: styleName) else {
+                return nil
+            }
+            
+            return Column(name: name, style: style, colorHex: colorHex, values: values)
+        })
+        
+        isPercentage = chart.percentage ?? false
+        isStacked = chart.stacked ?? false
+        isYScaled = chart.y_scaled ?? false
     }
 
 }
@@ -70,6 +89,9 @@ private struct CodableChart: Decodable {
     let types: [String: String]
     let names: [String: String]
     let colors: [String: String]
+    let y_scaled: Bool?
+    let stacked: Bool?
+    let percentage: Bool?
 
 }
 

@@ -7,43 +7,92 @@ import UIKit
 
 extension TrimRangeView {
 
-    static let verticalInset: CGFloat = 2
-    static let borderWidth: CGFloat = 1
-    static let horizontalInset: CGFloat = 10
-
+    static let verticalInset: CGFloat = 1
+    static let horizontalInset: CGFloat = 11
+    static let highlightLineWidth: CGFloat = 1
+    
 }
 
 final class TrimRangeView: BaseView {
     
+    private let externalBorderLayer = CALayer()
+    private let contentView = UIView()
+    
+    private let leadingArrow = UIImageView(image: UIImage(named: "trimmerArrowLeft"))
+    private let trailingArrow = UIImageView(image: UIImage(named: "trimmerArrowRight"))
+    
+    private let leadingHighlightLine = UIView()
+    private let trailingHighlightLine = UIView()
+    
     override func setup() {
         super.setup()
         
-        clipsToBounds = true
-        layer.cornerRadius = 3
+        layer.insertSublayer(externalBorderLayer, at: 0)
+        layer.masksToBounds = false
         
-        addSubview(leftArrow)
-        addSubview(rightArrow)
+        contentView.layer.cornerRadius = 6
+        addSubview(contentView)
+        contentView.frame = bounds
+        contentView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        
+        contentView.addSubview(leadingArrow)
+        contentView.addSubview(trailingArrow)
+        
+        addSubview(leadingHighlightLine)
+        addSubview(trailingHighlightLine)
     }
 
     override func layoutSubviews() {
         super.layoutSubviews()
         
+        CATransaction.performWithoutAnimation {
+            let borderWidth: CGFloat = 1
+            externalBorderLayer.borderWidth = borderWidth
+            externalBorderLayer.cornerRadius = contentView.layer.cornerRadius + borderWidth
+            externalBorderLayer.frame = CGRect(
+                x: -borderWidth,
+                y: -borderWidth,
+                width: bounds.width + 2 * borderWidth,
+                height: bounds.height + 2 * borderWidth
+            )
+        }
+        
         let maskFrame = bounds.insetBy(
             dx: TrimRangeView.horizontalInset,
-            dy: TrimRangeView.borderWidth
+            dy: TrimRangeView.verticalInset
         )
-        mask(withRect: maskFrame, inverse: true)
+        contentView.mask(withRect: maskFrame, inverse: true)
 
-        leftArrow.center = CGPoint(x: TrimRangeView.horizontalInset / 2, y: center.y)
-        rightArrow.center = CGPoint(x: frame.width - TrimRangeView.horizontalInset / 2, y: center.y)
+        leadingArrow.center = CGPoint(x: TrimRangeView.horizontalInset / 2, y: contentView.bounds.midY)
+        trailingArrow.center = CGPoint(x: contentView.bounds.width - TrimRangeView.horizontalInset / 2, y: contentView.bounds.midY)
+        
+        leadingHighlightLine.frame = CGRect(
+            x: maskFrame.minX,
+            y: maskFrame.minY,
+            width: TrimRangeView.highlightLineWidth,
+            height: maskFrame.height
+        )
+        trailingHighlightLine.frame = CGRect(
+            x: maskFrame.maxX - TrimRangeView.highlightLineWidth,
+            y: maskFrame.minY,
+            width: TrimRangeView.highlightLineWidth,
+            height: maskFrame.height
+        )
     }
 
-    private let leftArrow = UIImageView(image: UIImage(named: "trimmerArrowLeft"))
-    private let rightArrow = UIImageView(image: UIImage(named: "trimmerArrowRight"))
 }
 
 extension TrimRangeView: AppearanceSupport {
     func apply(theme: Theme) {
-        backgroundColor = theme.chartTrimmer
+        contentView.backgroundColor = theme.chartTrimmer
+        
+        // According to provided design.
+        let highlight = (theme is DayTheme) ? UIColor.white : UIColor.clear
+        CATransaction.performWithoutAnimation {
+            externalBorderLayer.borderColor = highlight.cgColor
+        }
+        
+        leadingHighlightLine.backgroundColor = highlight
+        trailingHighlightLine.backgroundColor = highlight
     }
 }

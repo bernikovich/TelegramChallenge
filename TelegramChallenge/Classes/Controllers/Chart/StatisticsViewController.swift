@@ -7,16 +7,19 @@ import UIKit
 
 class StatisticsViewController: BaseTableViewController {
     
+    private var chartViewModels: [ChartViewModel] = []
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         title = "Statistics"
         
-        tableView.rowHeight = UIConstants.defaultRowHeight
         tableView.register(cells: [
-            ChartTableViewCell.self,
-            GraphicSelectionTableViewCell.self,
-            SwitchThemeTableViewCell.self
+            BarChartTableViewCell.self,
+            LineChartTableViewCell.self,
+            SingleBarChartTableViewCell.self,
+            PercentChartTableViewCell.self,
+            TwoLinesChartTableViewCell.self
         ])
 
         tableView.register(HeaderView.self, forHeaderFooterViewReuseIdentifier: HeaderView.id)
@@ -34,8 +37,23 @@ class StatisticsViewController: BaseTableViewController {
             self?.tableView.reloadData()
         }
     }
-
-    private var chartViewModels: [ChartViewModel] = []
+    
+    override func apply(theme: Theme) {
+        super.apply(theme: theme)
+        
+        let title: String
+        if theme is NightTheme {
+            title = "Day Mode"
+        } else {
+            title = "Night Mode"
+        }
+        let barButton = UIBarButtonItem(title: title, style: .plain, target: self, action: #selector(switchTheme))
+        self.navigationItem.rightBarButtonItem = barButton
+    }
+    
+    @objc func switchTheme(_ sender: Any?) {
+        Appearance.switchTheme()
+    }
 
 }
 
@@ -49,12 +67,10 @@ extension StatisticsViewController: UITableViewDelegate, UITableViewDataSource {
     }
 
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        guard
-            section < chartViewModels.count,
-            let view = tableView.dequeueReusableHeaderFooterView(withIdentifier: HeaderView.id) as? HeaderView
-        else {
+        guard let view = tableView.dequeueReusableHeaderFooterView(withIdentifier: HeaderView.id) as? HeaderView else {
             return nil
         }
+        
         view.setup(title: "CHART #\(section + 1)")
         return view
     }
@@ -64,89 +80,58 @@ extension StatisticsViewController: UITableViewDelegate, UITableViewDataSource {
     }
 
     func numberOfSections(in tableView: UITableView) -> Int {
-        return chartViewModels.isEmpty ? 0 : chartViewModels.count + 1
+        return chartViewModels.count
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if section >= chartViewModels.count {
-            return 1
-        }
-        
-        return chartViewModels[section].chart.lines.count + 1
+        return 1
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let section = indexPath.section
-        if indexPath.section >= chartViewModels.count {
-            return tableView.dequeueReusableCell(for: indexPath) as SwitchThemeTableViewCell
-        }
-        
-        let item = indexPath.item
         let viewModel = chartViewModels[section]
-        let chart = viewModel.chart
-        if item == 0 {
-            let cell = tableView.dequeueReusableCell(for: indexPath) as ChartTableViewCell
+        
+        // TODO: Implement with some kind of switch.
+        if viewModel.chart.isPercentage {
+            let cell: PercentChartTableViewCell = tableView.dequeueReusableCell(for: indexPath)
+            cell.setupWith(viewModel: viewModel)
+            return cell
+        } else if viewModel.chart.isStacked {
+            let cell: BarChartTableViewCell = tableView.dequeueReusableCell(for: indexPath)
+            cell.setupWith(viewModel: viewModel)
+            return cell
+        } else if viewModel.chart.columns.count == 1, viewModel.chart.columns[0].style == .bar {
+            let cell: SingleBarChartTableViewCell = tableView.dequeueReusableCell(for: indexPath)
+            cell.setupWith(viewModel: viewModel)
+            return cell
+        } else if viewModel.chart.isYScaled && viewModel.chart.columns.count == 2 {
+            let cell: TwoLinesChartTableViewCell = tableView.dequeueReusableCell(for: indexPath)
             cell.setupWith(viewModel: viewModel)
             return cell
         } else {
-            let cell = tableView.dequeueReusableCell(for: indexPath) as GraphicSelectionTableViewCell
-            let line = chart.lines[item - 1]
-            cell.setupWith(line: line, viewModel: viewModel)
+            let cell: LineChartTableViewCell = tableView.dequeueReusableCell(for: indexPath)
+            cell.setupWith(viewModel: viewModel)
             return cell
         }
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        if indexPath.section >= chartViewModels.count {
-            return UIConstants.defaultRowHeight
-        }
-        
-        if indexPath.row == 0 {
-            let tableSide = min(tableView.bounds.width, tableView.bounds.height)
-            let height = tableSide > 500 ? tableSide / 2 : tableSide
-            return height
+        let viewModel = chartViewModels[indexPath.section]
+        if viewModel.chart.isPercentage {
+            return PercentChartTableViewCell.preferredHeight(for: viewModel, containerWidth: tableView.bounds.width)
+        } else if viewModel.chart.isStacked {
+            return BarChartTableViewCell.preferredHeight(for: viewModel, containerWidth: tableView.bounds.width)
+        } else if viewModel.chart.columns.count == 1, viewModel.chart.columns[0].style == .bar {
+            return  SingleBarChartTableViewCell.preferredHeight(for: viewModel, containerWidth: tableView.bounds.width)
+        } else if viewModel.chart.isYScaled && viewModel.chart.columns.count == 2 {
+            return TwoLinesChartTableViewCell.preferredHeight(for: viewModel, containerWidth: tableView.bounds.width)
         } else {
-            return UIConstants.defaultRowHeight
+            return LineChartTableViewCell.preferredHeight(for: viewModel, containerWidth: tableView.bounds.width)
         }
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        let section = indexPath.section
-        if section >= chartViewModels.count {
-            Appearance.switchTheme()
-            return
-        }
-        let item = indexPath.item
-
-        guard item > 0 else {
-            return
-        }
-
-        let viewModel = chartViewModels[section]
-        let line = viewModel.chart.lines[item - 1]
-        viewModel.switchLineEnabled(line)
-        if let cell = tableView.cellForRow(at: indexPath) as? GraphicSelectionTableViewCell {
-            cell.setupWith(line: line, viewModel: viewModel)
-        }
-    }
-
-}
-
-private enum UIConstants {
-    
-    static let defaultRowHeight: CGFloat = 44
-
-}
-
-private extension GraphicSelectionTableViewCell {
-
-    func setupWith(line: Line, viewModel: ChartViewModel) {
-        self.setupWith(
-            title: line.name,
-            color: UIColor(hexString: line.colorHex),
-            selected: viewModel.isLineEnabled(line)
-        )
     }
 
 }

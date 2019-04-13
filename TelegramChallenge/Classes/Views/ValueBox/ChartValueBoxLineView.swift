@@ -14,7 +14,7 @@ final class ChartValueBoxLineView: BaseView {
         frame.size.width = Constants.bubbleSize
     }
 
-    func setupWithLines(_ lines: [Line], index: Int, range: ClosedRange<Int64>) {
+    func setupWithLines(_ lines: [Column], index: Int, range: ClosedRange<Int64>) {
         subviews
             .filter { $0 is BubbleView }
             .forEach { $0.removeFromSuperview() }
@@ -40,7 +40,7 @@ final class ChartValueBoxLineView: BaseView {
 
 extension ChartValueBoxLineView: AppearanceSupport {
     func apply(theme: Theme) {
-        line.backgroundColor = Appearance.theme.chartLine
+        line.backgroundColor = Appearance.theme.chartPlotLine
     }
 }
 

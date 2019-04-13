@@ -5,6 +5,13 @@
 
 import UIKit
 
+enum ChartConstants {
+    
+    // Do we need this?
+    static let startChartVisibilityRange = (1 - TrimmerConstants.defaultVisibility)...1
+    
+}
+
 final class ChartViewModel {
 
     let chart: Chart
@@ -32,20 +39,20 @@ final class ChartViewModel {
     
     init(chart: Chart) {
         self.chart = chart
-        linesEnabled = Set(chart.lines)
+        linesEnabled = Set(chart.columns)
     }
 
-    func switchLineEnabled(_ line: Line) {
+    func switchLineEnabled(_ line: Column) {
         if linesEnabled.remove(line) == nil {
             linesEnabled.insert(line)
         }
         onLinesEnabledUpdate?()
     }
 
-    func isLineEnabled(_ line: Line) -> Bool {
+    func isColumnEnabled(_ line: Column) -> Bool {
         return linesEnabled.contains(line)
     }
 
-    private var linesEnabled: Set<Line>
+    private var linesEnabled: Set<Column>
     
 }

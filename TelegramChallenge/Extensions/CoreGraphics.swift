@@ -17,6 +17,17 @@ extension CGAffineTransform {
         let ty = self.ty * (1 - progress) + targetTransform.ty * progress
         return CGAffineTransform(a: a, b: b, c: c, d: d, tx: tx, ty: ty)
     }
+    
+    func applyingHorizontalTransform(_ transofrm: CGAffineTransform) -> CGAffineTransform {
+        return CGAffineTransform(
+            a: transofrm.a,
+            b: self.b,
+            c: transofrm.c,
+            d: self.d,
+            tx: transofrm.tx,
+            ty: self.ty
+        )
+    }
 }
 
 extension CGAffineTransform {
@@ -100,7 +111,7 @@ extension CGPath {
         let unsafeBody = unsafeBitCast(body, to: UnsafeMutableRawPointer.self)
         self.apply(info: unsafeBody, function: unsafeBitCast(callback, to: CGPathApplierFunction.self))
     }
-    private func getPathElementsPoints() -> [CGPoint] {
+    func getPathElementsPoints() -> [CGPoint] {
         var arrayPoints: [CGPoint]! = [CGPoint]()
         self.forEach { element in
             switch (element.type) {
@@ -135,5 +146,11 @@ fileprivate class AnimationDelegate<Animation: CAAnimation>: NSObject, CAAnimati
         if let animation = animation as? Animation {
             completionClosure?(animation, finished)
         }
+    }
+}
+
+extension CGSize {
+    func ceiled() -> CGSize {
+        return CGSize(width: ceil(width), height: ceil(height))
     }
 }

@@ -7,7 +7,7 @@ import UIKit
 
 final class ChartValueBoxHandler {
 
-    let box = ChartValueBoxView()
+    let box = BarChartValueBoxView(style: .normal)
     let line = ChartValueBoxLineView()
 
     func show() {
@@ -31,4 +31,5 @@ final class ChartValueBoxHandler {
             self.line.removeFromSuperview()
         })
     }
+
 }

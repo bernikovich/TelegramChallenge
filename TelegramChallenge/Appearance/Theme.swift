@@ -9,15 +9,20 @@ protocol Theme {
     var statusBarStyle: UIStatusBarStyle { get }
     var main: UIColor { get }
     var accent: UIColor { get }
+    var tintColor: UIColor { get }
     var text: UIColor { get }
     var background: UIColor { get }
     var separator: UIColor { get }
+    var header: UIColor { get }
     
     // Chart
-    var chartLine: UIColor { get }
-    var chartOriginLine: UIColor { get }
-    var chartLineText: UIColor { get }
+    var chartPlotLine: UIColor { get }
+    var lineChartPlotText: UIColor { get }
     var chartBoxText: UIColor { get }
+    
+    var barChartPlotXAxisText: UIColor { get }
+    var barChartPlotYAxisText: UIColor { get }
+    var barChartFade: UIColor { get }
 
     var chartTrimmer: UIColor { get }
     var chartTrimmerFade: UIColor { get }
@@ -27,32 +32,42 @@ struct DayTheme: Theme {
     let statusBarStyle: UIStatusBarStyle = .default
     let main = UIColor(hex: 0xFEFEFE)
     let accent = UIColor(hex: 0x027EE5)
+    let tintColor = UIColor(hex: 0x108BE3)
     let text = UIColor(hex: 0x000000)
     let background = UIColor(hex: 0xEFEFF4)
     let separator = UIColor(hex: 0xCCCCD1)
+    let header = UIColor(hex: 0x8E8E93)
     
-    let chartLine = UIColor(hex: 0xF3F3F3)
-    let chartOriginLine = UIColor(hex: 0xE1E2E3)
-    let chartLineText = UIColor(hex: 0x989EA3)
+    let chartPlotLine = UIColor(hex: 0x182D3B).withAlphaComponent(0.1)
+    let lineChartPlotText = UIColor(hex: 0x8E8E93)
     let chartBoxText = UIColor(hex: 0x69696E)
+    
+    let barChartPlotXAxisText = UIColor(hex: 0x252529).withAlphaComponent(0.5)
+    let barChartPlotYAxisText = UIColor(hex: 0x252529).withAlphaComponent(0.5)
+    let barChartFade = UIColor(hex: 0xFFFFFF).withAlphaComponent(0.5)
 
-    let chartTrimmer = UIColor(hex: 0xC9D3DC).withAlphaComponent(0.92)
-    let chartTrimmerFade = UIColor(hex: 0xEAF0F6).withAlphaComponent(0.8)
+    let chartTrimmer = UIColor(hex: 0xC0D1E1)
+    let chartTrimmerFade = UIColor(hex: 0xE2EEF9).withAlphaComponent(0.6)
 }
 
 struct NightTheme: Theme {
     let statusBarStyle: UIStatusBarStyle = .lightContent
     let main = UIColor(hex: 0x213040)
     let accent = UIColor(hex: 0x1891FF)
+    let tintColor = UIColor(hex: 0x2EA6FE)
     let text = UIColor(hex: 0xFEFEFE)
     let background = UIColor(hex: 0x18222D)
     let separator = UIColor(hex: 0x121A23)
+    let header = UIColor(hex: 0x8596AB)
     
-    let chartLine = UIColor(hex: 0x1B2734)
-    let chartOriginLine = UIColor(hex: 0x131B23)
-    let chartLineText = UIColor(hex: 0x5D6D7E)
-    let chartBoxText = UIColor(hex: 0xFEFEFE)
+    let chartPlotLine = UIColor(hex: 0x8596AB).withAlphaComponent(0.2)
+    let lineChartPlotText = UIColor(hex: 0x8596AB)
+    let chartBoxText = UIColor(hex: 0xFFFFFF)
+    
+    let barChartPlotXAxisText = UIColor(hex: 0x8596AB)
+    let barChartPlotYAxisText = UIColor(hex: 0xBACCE1).withAlphaComponent(0.6)
+    let barChartFade = UIColor(hex: 0x212F3F).withAlphaComponent(0.5)
 
-    let chartTrimmer = UIColor(hex: 0x3B4A5A).withAlphaComponent(0.92)
-    let chartTrimmerFade = UIColor(hex: 0x172332).withAlphaComponent(0.8)
+    let chartTrimmer = UIColor(hex: 0x56626D)
+    let chartTrimmerFade = UIColor(hex: 0x18222D).withAlphaComponent(0.6)
 }

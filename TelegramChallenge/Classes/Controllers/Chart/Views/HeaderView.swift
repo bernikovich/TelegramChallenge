@@ -25,6 +25,6 @@ final class HeaderView: UITableViewHeaderFooterView, Identifiable {
 
 extension HeaderView: AppearanceSupport {
     func apply(theme: Theme) {
-        textLabel?.textColor = theme.chartLineText
+        textLabel?.textColor = theme.header
     }
 }

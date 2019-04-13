@@ -32,13 +32,27 @@ final class TrimmerView: BaseView {
         }
     }
     
+    private let chartView: ChartView
+    
+    init(chartView: ChartView) {
+        self.chartView = chartView
+        super.init(frame: .zero)
+    }
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     private func notifyDelegate() {
         delegate?.trimmerView(trimmerView: self, didUpdate: selectedRange)
     }
 
     override func setup() {
         super.setup()
-        self.chartView.mask = trimRangeView
+        
+        chartView.layer.cornerRadius = 6
+        chartView.layer.masksToBounds = true
+        chartView.mask = trimRangeView
+        
         addSubview(chartView)
         addSubview(fadeView)
         addSubview(trimRangeView)
@@ -72,12 +86,12 @@ final class TrimmerView: BaseView {
     }
     
     func drawChart(_ chart: Chart, animated: Bool) {
-        chartView.setupWithChart(chart, animated: animated)
+        chartView.setupWithChart(chart, in: 0...1, animated: animated)
         notifyDelegate()
     }
 
-    func setupVisibleLines(_ visibleLines: [Line], animated: Bool = true) {
-        chartView.setupVisibleLines(visibleLines, animated: animated)
+    func setupVisibleColumns(_ visibleLines: [Column], animated: Bool = true) {
+        chartView.setupVisibleColumns(visibleLines, animated: animated)
     }
 
     private func relayoutTrimRangeView() {
@@ -91,8 +105,11 @@ final class TrimmerView: BaseView {
         )
     }
 
-    private let chartView = ChartView(simplified: true)
-    private let fadeView = UIView()
+    private let fadeView: UIView = {
+        let view = UIView()
+        view.layer.cornerRadius = 6
+        return view
+    }()
     private let trimRangeView = TrimRangeView()
     private var gestureAnchor: CGPoint?
     private var trimType: TrimType?
@@ -120,7 +137,8 @@ extension TrimmerView: UIGestureRecognizerDelegate {
 private extension TrimmerView {
 
     func maskChartView() {
-        fadeView.mask(withRect: trimRangeView.frame, inverse: true)
+        let maskFrame = trimRangeView.frame.insetBy(dx: TrimRangeView.horizontalInset, dy: 0)
+        fadeView.mask(withRect: maskFrame, inverse: true)
     }
 
     func trimRangeWidth(for visibility: CGFloat) -> CGFloat {
@@ -138,15 +156,15 @@ private extension TrimmerView {
             guard let anchor = gestureAnchor else { break }
 
             let delta = newLocation.x - anchor.x
-
             let updates = calculateTrimFrameUpdates(delta: delta)
             applyTrimUpdates(x: updates.x, width: updates.width)
             gestureAnchor = newLocation
-
         case .cancelled, .ended:
             gestureAnchor = nil
             trimType = nil
         case .failed, .possible:
+            break
+        @unknown default:
             break
         }
     }

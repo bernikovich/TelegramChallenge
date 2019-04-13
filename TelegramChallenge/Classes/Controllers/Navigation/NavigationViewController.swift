@@ -16,7 +16,7 @@ class NavigationViewController: UINavigationController, AppearanceSupport {
     func apply(theme: Theme) {
         setNeedsStatusBarAppearanceUpdate()
         navigationBar.barTintColor = theme.main
-        navigationBar.tintColor = theme.text
+//        navigationBar.tintColor = theme.text
         navigationBar.titleTextAttributes = [.foregroundColor: theme.text]
     }
     
