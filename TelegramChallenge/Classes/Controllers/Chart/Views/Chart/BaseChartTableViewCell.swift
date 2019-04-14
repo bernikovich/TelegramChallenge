@@ -19,7 +19,7 @@ extension ChartType {
     }
 }
 
-class ChartTableViewCell: BaseTableViewCell {
+class BaseChartTableViewCell: BaseTableViewCell {
     
     class var chartType: ChartType { return .lines }
     
@@ -240,6 +240,11 @@ class ChartTableViewCell: BaseTableViewCell {
         chartView.setupVisibleColumns(visibleColumns, animated: animated)
         trimmerView.setupVisibleColumns(visibleColumns, animated: animated)
         
+        if let viewModel = viewModel {
+            let filterStates = viewModel.chart.columns.map { viewModel.isColumnEnabled($0) }
+            filterCollectionView.updateStates(filterStates, animated: animated)
+        }
+        
         if let oldVisibleColumns = oldVisibleColumns, oldVisibleColumns.isEmpty != visibleColumns.isEmpty {
             updateEmptyState(visibleLines: visibleColumns, animated: animated)
         }
@@ -315,24 +320,45 @@ class ChartTableViewCell: BaseTableViewCell {
             FilterSwitch.Item(color: UIColor(hexString: $0.colorHex), text: $0.name)
         }
         let initialStates = viewModel.chart.columns.map { viewModel.isColumnEnabled($0) }
-        return FilterSwitchCollection.Item(switchItems: items, states: initialStates) { index in
-            viewModel.switchLineEnabled(viewModel.chart.columns[index])
+        
+        
+        let onSelect: (Int) -> () = {
+            viewModel.switchColumnVisibilityState(viewModel.chart.columns[$0])
         }
+        let onLongPress: (Int) -> () = {
+            viewModel.hideAllColumnsBut(viewModel.chart.columns[$0])
+        }
+        
+        return FilterSwitchCollection.Item(
+            switchItems: items,
+            states: initialStates,
+            onSelectItem: onSelect,
+            onLongPressItem: onLongPress
+        )
     }
     
 }
 
-extension ChartTableViewCell: TrimmerViewDelegate {
+extension BaseChartTableViewCell: TrimmerViewDelegate {
     func trimmerView(trimmerView: TrimmerView, didUpdate selectedRange: ClosedRange<CGFloat>) {
         guard viewModel?.selectedRange != selectedRange else {
             return
         }
+        
+        let time1 = CACurrentMediaTime()
         viewModel?.selectedRange = selectedRange
+        let time2 = CACurrentMediaTime()
         chartView.updateWithRange(selectedRange, forceReload: false, animated: true)
+        print("---")
+        print("Range change time1: \(time2 - time1)")
+        print("Range change time2: \(CACurrentMediaTime() - time2)")
+        if CACurrentMediaTime() - time1 > 0.02 {
+            print("___")
+        }
     }
 }
 
-private extension ChartTableViewCell {
+private extension BaseChartTableViewCell {
     func makeLegend(from values: [Date]) -> [String] {
         return values.map(type(of: self).dateFormatter.string)
     }

@@ -20,6 +20,7 @@
 		2FDCCDB92242D56400B69920 /* ValueBoxLineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FDCCDB82242D56400B69920 /* ValueBoxLineView.swift */; };
 		96EB72BB225753BF008C2360 /* GradientView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96EB72BA225753BF008C2360 /* GradientView.swift */; };
 		B01D39A4224178A800B5E8BF /* TransformCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01D39A3224178A800B5E8BF /* TransformCalculator.swift */; };
+		B01D4AF822638A8300C7AA93 /* CoreAnimationExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01D4AF722638A8300C7AA93 /* CoreAnimationExtensions.swift */; };
 		B04D49B32262838B00FBBFB1 /* ValueBoxViewPositionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B04D49B22262838B00FBBFB1 /* ValueBoxViewPositionHandler.swift */; };
 		B05548A6223A62100078E989 /* PlotCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B05548A5223A62100078E989 /* PlotCalculator.swift */; };
 		B06795712244F17E008461F6 /* CoreGraphics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B06795702244F17E008461F6 /* CoreGraphics.swift */; };
@@ -27,7 +28,7 @@
 		B080F7EF226001F000AB9B42 /* ValueBoxTitleValueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B080F7EE226001F000AB9B42 /* ValueBoxTitleValueView.swift */; };
 		B080F7F12260077A00AB9B42 /* ValueBoxViewTransitionsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B080F7F02260077A00AB9B42 /* ValueBoxViewTransitionsHandler.swift */; };
 		B080F7F8226126F700AB9B42 /* LineChartTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B080F7F5226126F600AB9B42 /* LineChartTableViewCell.swift */; };
-		B080F7F9226126F700AB9B42 /* ChartTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B080F7F6226126F600AB9B42 /* ChartTableViewCell.swift */; };
+		B080F7F9226126F700AB9B42 /* BaseChartTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B080F7F6226126F600AB9B42 /* BaseChartTableViewCell.swift */; };
 		B080F7FA226126F700AB9B42 /* BarChartTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B080F7F7226126F700AB9B42 /* BarChartTableViewCell.swift */; };
 		B080F7FC2261283A00AB9B42 /* BaseChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B080F7FB2261283A00AB9B42 /* BaseChartView.swift */; };
 		B080F7FE2261333300AB9B42 /* SingleBarChartTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = B080F7FD2261333300AB9B42 /* SingleBarChartTableViewCell.swift */; };
@@ -73,6 +74,7 @@
 		2FDCCDB82242D56400B69920 /* ValueBoxLineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueBoxLineView.swift; sourceTree = "<group>"; };
 		96EB72BA225753BF008C2360 /* GradientView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientView.swift; sourceTree = "<group>"; };
 		B01D39A3224178A800B5E8BF /* TransformCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformCalculator.swift; sourceTree = "<group>"; };
+		B01D4AF722638A8300C7AA93 /* CoreAnimationExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreAnimationExtensions.swift; sourceTree = "<group>"; };
 		B04D49B22262838B00FBBFB1 /* ValueBoxViewPositionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueBoxViewPositionHandler.swift; sourceTree = "<group>"; };
 		B05548A5223A62100078E989 /* PlotCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlotCalculator.swift; sourceTree = "<group>"; };
 		B06795702244F17E008461F6 /* CoreGraphics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreGraphics.swift; sourceTree = "<group>"; };
@@ -80,7 +82,7 @@
 		B080F7EE226001F000AB9B42 /* ValueBoxTitleValueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueBoxTitleValueView.swift; sourceTree = "<group>"; };
 		B080F7F02260077A00AB9B42 /* ValueBoxViewTransitionsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueBoxViewTransitionsHandler.swift; sourceTree = "<group>"; };
 		B080F7F5226126F600AB9B42 /* LineChartTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LineChartTableViewCell.swift; sourceTree = "<group>"; };
-		B080F7F6226126F600AB9B42 /* ChartTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChartTableViewCell.swift; sourceTree = "<group>"; };
+		B080F7F6226126F600AB9B42 /* BaseChartTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseChartTableViewCell.swift; sourceTree = "<group>"; };
 		B080F7F7226126F700AB9B42 /* BarChartTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BarChartTableViewCell.swift; sourceTree = "<group>"; };
 		B080F7FB2261283A00AB9B42 /* BaseChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseChartView.swift; sourceTree = "<group>"; };
 		B080F7FD2261333300AB9B42 /* SingleBarChartTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleBarChartTableViewCell.swift; sourceTree = "<group>"; };
@@ -190,8 +192,8 @@
 		B080F7F4226123FF00AB9B42 /* Chart */ = {
 			isa = PBXGroup;
 			children = (
+				B080F7F6226126F600AB9B42 /* BaseChartTableViewCell.swift */,
 				B080F7F7226126F700AB9B42 /* BarChartTableViewCell.swift */,
-				B080F7F6226126F600AB9B42 /* ChartTableViewCell.swift */,
 				B080F7F5226126F600AB9B42 /* LineChartTableViewCell.swift */,
 				B080F80222613B2A00AB9B42 /* PercentChartTableViewCell.swift */,
 				B080F7FD2261333300AB9B42 /* SingleBarChartTableViewCell.swift */,
@@ -392,6 +394,7 @@
 				B0F037E32236821F0085ACE6 /* UITableViewExtensions.swift */,
 				B0F0085F22368C2A00E2CD74 /* UIKit.swift */,
 				2F39537A22397C8600AD3673 /* RangeExtensions.swift */,
+				B01D4AF722638A8300C7AA93 /* CoreAnimationExtensions.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -511,7 +514,7 @@
 				B080F7EF226001F000AB9B42 /* ValueBoxTitleValueView.swift in Sources */,
 				2F14B4BD224372BA006E7F31 /* HeaderView.swift in Sources */,
 				B0F037E222367C5A0085ACE6 /* Chart.swift in Sources */,
-				B080F7F9226126F700AB9B42 /* ChartTableViewCell.swift in Sources */,
+				B080F7F9226126F700AB9B42 /* BaseChartTableViewCell.swift in Sources */,
 				B0F037E022367C1B0085ACE6 /* ChartFetchService.swift in Sources */,
 				2F50BFC522381D3600FF3040 /* BaseView.swift in Sources */,
 				B01D39A4224178A800B5E8BF /* TransformCalculator.swift in Sources */,
@@ -529,6 +532,7 @@
 				2F3B7F49223E5EDD00BF36A0 /* ReusableViewPool.swift in Sources */,
 				B0F037D4223674000085ACE6 /* BaseViewController.swift in Sources */,
 				B0F037B022366AAD0085ACE6 /* AppDelegate.swift in Sources */,
+				B01D4AF822638A8300C7AA93 /* CoreAnimationExtensions.swift in Sources */,
 				B0F008652237C32000E2CD74 /* LineChartView.swift in Sources */,
 				B0F008692237F11D00E2CD74 /* PlotLineLayer.swift in Sources */,
 				B0F037DA223678240085ACE6 /* UIColorExtensions.swift in Sources */,

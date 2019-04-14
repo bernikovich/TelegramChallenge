@@ -355,7 +355,7 @@ private extension PercentChartView {
             if let oldHandler = valueBoxHandler {
                 update(handler: oldHandler)
             } else {
-                let handler = ValueBoxViewTransitionsHandler(style: .normal)
+                let handler = ValueBoxViewTransitionsHandler(style: .percent)
                 valueBoxHandler = handler
                 parent.addSubview(handler.view)
                 columnsContainerView.addSubview(handler.lineView)

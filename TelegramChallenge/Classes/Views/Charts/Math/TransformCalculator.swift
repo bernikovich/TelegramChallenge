@@ -92,8 +92,8 @@ class TransformCalculator {
         
         // 1. Transform path to plot values.
         // 1.a Scale.
-        let minValue = path.values.min() ?? 0
-        let maxValue = path.values.max() ?? 1
+        let minValue = path.minValue ?? 0
+        let maxValue = path.maxValue ?? 1
         let verticalRange = minValue != maxValue ? Double(maxValue - minValue) : 1
         transform = transform.concatenating(CGAffineTransform(scaleX: 1, y: CGFloat(verticalRange)))
         

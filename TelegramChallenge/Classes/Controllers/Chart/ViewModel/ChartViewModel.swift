@@ -15,6 +15,7 @@ enum ChartConstants {
 final class ChartViewModel {
 
     let chart: Chart
+    private var visibleColumns: Set<Column>
 
     var selectedRange = ChartConstants.startChartVisibilityRange {
         didSet {
@@ -30,7 +31,6 @@ final class ChartViewModel {
             selectedRangeUpdate?(selectedRange)
         }
     }
-
     var onLinesEnabledUpdate: (() -> ())? {
         didSet {
             onLinesEnabledUpdate?()
@@ -39,20 +39,27 @@ final class ChartViewModel {
     
     init(chart: Chart) {
         self.chart = chart
-        linesEnabled = Set(chart.columns)
+        visibleColumns = Set(chart.columns)
     }
 
-    func switchLineEnabled(_ line: Column) {
-        if linesEnabled.remove(line) == nil {
-            linesEnabled.insert(line)
+    func switchColumnVisibilityState(_ column: Column) {
+        // We don't want to make hiding all columns pos
+        if visibleColumns.count == 1, let visibleColumn = visibleColumns.first, visibleColumn == column {
+            return
         }
+        
+        if visibleColumns.remove(column) == nil {
+            visibleColumns.insert(column)
+        }
+        onLinesEnabledUpdate?()
+    }
+    func hideAllColumnsBut(_ column: Column) {
+        visibleColumns = [column]
         onLinesEnabledUpdate?()
     }
 
     func isColumnEnabled(_ line: Column) -> Bool {
-        return linesEnabled.contains(line)
+        return visibleColumns.contains(line)
     }
-
-    private var linesEnabled: Set<Column>
     
 }

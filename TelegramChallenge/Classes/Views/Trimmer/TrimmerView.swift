@@ -202,7 +202,10 @@ private extension TrimmerView {
             }
         case .center:
             proposedX = (minX...maxX).clamp(proposedX)
-            proposedX = proposedX.round(to: x < 0 ? minX : maxX, threshold: threshold)
+            
+            if abs(x) > 0 {
+                proposedX = proposedX.round(to: x < 0 ? minX : maxX, threshold: threshold)
+            }
         }
 
         trimRangeView.frame = CGRect(

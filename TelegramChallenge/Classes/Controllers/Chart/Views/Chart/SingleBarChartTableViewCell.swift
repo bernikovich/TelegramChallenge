@@ -5,7 +5,7 @@
 
 import UIKit
 
-final class SingleBarChartTableViewCell: ChartTableViewCell, Identifiable {
+final class SingleBarChartTableViewCell: BaseChartTableViewCell, Identifiable {
     
     override class var chartType: ChartType { return .singleBar }
     

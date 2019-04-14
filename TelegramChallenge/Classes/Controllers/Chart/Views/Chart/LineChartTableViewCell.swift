@@ -5,7 +5,7 @@
 
 import UIKit
 
-final class LineChartTableViewCell: ChartTableViewCell, Identifiable {
+final class LineChartTableViewCell: BaseChartTableViewCell, Identifiable {
     
     override class var chartType: ChartType { return .lines }
     

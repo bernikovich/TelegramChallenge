@@ -5,7 +5,7 @@
 
 import UIKit
 
-final class TwoLinesChartTableViewCell: ChartTableViewCell, Identifiable {
+final class TwoLinesChartTableViewCell: BaseChartTableViewCell, Identifiable {
     
     override class var chartType: ChartType { return .twoLines }
     

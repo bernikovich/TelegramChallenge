@@ -8,7 +8,7 @@ import UIKit
 final class ValueBoxView: BaseView {
     
     enum Style {
-        case normal, stacked
+        case normal, stacked, percent
     }
     
     let style: Style
@@ -23,6 +23,8 @@ final class ValueBoxView: BaseView {
     
     private let valuesContainer = UIView()
     private var titleValueViews: [ValueBoxTitleValueView] = []
+    
+    private let backgroundView = UIView()
     
     init(style: Style) {
         self.style = style
@@ -65,7 +67,16 @@ final class ValueBoxView: BaseView {
             sources = columns.map { ValueBoxTitleValueView.Source.column($0) }
         case .stacked:
             sources = columns.map { ValueBoxTitleValueView.Source.column($0) } + (columns.count > 1 ? [.all] : [])
+        case .percent:
+            sources = columns.map { ValueBoxTitleValueView.Source.column($0) }
         }
+        
+        let sum = columns.reduce(Int64(0), { $0 + $1.values[index] })
+        var columnPercentsFloat: [Int: Double] = [:]
+        columns.enumerated().forEach { columnIndex, column in
+            columnPercentsFloat[columnIndex] = Double(column.values[index]) * 100 / Double(sum)
+        }
+        let normalizedColumnPercents = normalizePercents(columnPercentsFloat)
         
         sources.forEach { source in
             let view: ValueBoxTitleValueView
@@ -78,14 +89,21 @@ final class ValueBoxView: BaseView {
             newTitleValueViews.append(view)
             
             let value: Int64
+            let percent: Int?
             switch source {
             case .all:
-                value = columns.reduce(Int64(0), { $0 + $1.values[index] })
+                value = sum
+                percent = nil
             case let .column(column):
                 value = column.values[index]
+                if let columnIndex = columns.firstIndex(where: { $0 == column }) {
+                    percent = style == .percent ? normalizedColumnPercents[columnIndex] : nil
+                } else {
+                    percent = nil
+                }
             }
             
-            view.updateWithValue(value) // Animated?
+            view.updateWithValue(value, percent: percent) // Animated?
         }
         
         titleValueViews = newTitleValueViews
@@ -98,12 +116,16 @@ final class ValueBoxView: BaseView {
         valuesContainer.frame = CGRect(x: horizontalInset, y: titleLabel.frame.maxY + spacing, width: 0, height: 0)
         
         var previousView: UIView?
+        var maxPercentWidth: CGFloat = 0
         newTitleValueViews.forEach { view in
             if view.superview != valuesContainer {
                 valuesContainer.addSubview(view)
             }
             
-            let size = view.preferredSize()
+            let params = view.preferredSize()
+            let size = params.size
+            maxPercentWidth = max(maxPercentWidth, params.percentWidth)
+            
             if let previousView = previousView {
                 view.frame = CGRect(x: 0, y: previousView.frame.maxY + spacing, width: valuesContainer.frame.width, height: size.height)
             } else {
@@ -112,6 +134,9 @@ final class ValueBoxView: BaseView {
             view.autoresizingMask = [.flexibleWidth, .flexibleBottomMargin]
             previousView = view
             valuesContainer.frame.size = CGSize(width: max(valuesContainer.frame.width, size.width), height: view.frame.maxY)
+        }
+        newTitleValueViews.forEach {
+            $0.percentWidth = maxPercentWidth
         }
         
         bounds = CGRect(
@@ -124,9 +149,47 @@ final class ValueBoxView: BaseView {
         valuesContainer.frame.size = CGSize(width: backgroundView.frame.width - 2 * horizontalInset, height: valuesContainer.frame.height)
     }
     
+    // Can be shared.
+    private func normalizePercents(_ percents: [Int: Double]) -> [Int: Int] {
+        guard !percents.isEmpty else {
+            return [:]
+        }
+        
+        let targetPercent = 100
+        let currentSum = percents.values.reduce(Int(0), { $0 + Int($1) })
+        let reminders = percents.mapValues { $0 - Double(Int($0)) }
+        
+        let defaultIndexForChanges = 0
+        
+        if currentSum == targetPercent {
+            return percents.mapValues { Int($0) }
+        } else if currentSum < targetPercent {
+            // Increase value with biggest reminder.
+            if let maxReminder = reminders.values.max(),
+                let targetIndex = reminders.first(where: { $0.value == maxReminder })?.key {
+                var newPercents = percents
+                newPercents[targetIndex] = Double(Int64(percents[targetIndex] ?? 0) + 1)
+                return normalizePercents(newPercents)
+            } else {
+                var newPercents = percents
+                newPercents[defaultIndexForChanges] = Double(Int64(percents[defaultIndexForChanges] ?? 0) + 1)
+                return normalizePercents(newPercents)
+            }
+        } else {
+            // Reduce value with smallest reminder.
+            if let minReminder = reminders.values.min(),
+                let targetIndex = reminders.first(where: { $0.value == minReminder })?.key {
+                var newPercents = percents
+                newPercents[targetIndex] = Double(Int64(percents[targetIndex] ?? 0) - 1)
+                return normalizePercents(newPercents)
+            } else {
+                var newPercents = percents
+                newPercents[defaultIndexForChanges] = Double(Int64(percents[defaultIndexForChanges] ?? 0) - 1)
+                return normalizePercents(newPercents)
+            }
+        }
+    }
     
-    private let valueLabel = UILabel()
-    private let backgroundView = UIView()
 }
 
 extension ValueBoxView: AppearanceSupport {

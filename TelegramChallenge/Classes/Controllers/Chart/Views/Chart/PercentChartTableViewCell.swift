@@ -5,7 +5,7 @@
 
 import UIKit
 
-final class PercentChartTableViewCell: ChartTableViewCell, Identifiable {
+final class PercentChartTableViewCell: BaseChartTableViewCell, Identifiable {
     
     override class var chartType: ChartType { return .percent }
     

@@ -24,9 +24,10 @@ class FilterSwitch: BaseView {
     private let checkmarkLayer = CAShapeLayer.makeCheckmark()
     private let label = UILabel()
     
-    var isSelected: Bool = true
+    private(set) var isSelected: Bool = true
     private var item: Item?
     var onSelect: (() -> ())?
+    var onLongTap: (() -> ())?
     
     private static var attributes: [NSAttributedString.Key: Any] {
         return [
@@ -47,6 +48,9 @@ class FilterSwitch: BaseView {
         innerButton.frame = bounds
         innerButton.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         
+        let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(FilterSwitch.didLongPress(_:)))
+        innerButton.addGestureRecognizer(longPressGesture)
+        
         label.textAlignment = .center
         addSubview(label)
         
@@ -58,12 +62,12 @@ class FilterSwitch: BaseView {
             height: UIConstants.checkmarkSize
         )
         
-        updateState()
+        updateState(animated: false)
     }
     
     override func layoutSubviews() {
         super.layoutSubviews()
-        updateState()
+        updateState(animated: false)
     }
     
     func setup(with item: Item) {
@@ -73,7 +77,12 @@ class FilterSwitch: BaseView {
         label.attributedText = NSAttributedString(string: item.text, attributes: FilterSwitch.attributes)
         label.sizeToFit()
         
-        updateState()
+        updateState(animated: false)
+    }
+    
+    func updateState(_ isSelected: Bool, animated: Bool) {
+        self.isSelected = isSelected
+        updateState(animated: animated)
     }
     
     static func preferredSize(for item: Item) -> CGSize {
@@ -87,16 +96,27 @@ class FilterSwitch: BaseView {
     }
     
     @objc func didSelectButton(_ sender: Any?) {
-        isSelected = !isSelected
         onSelect?()
-        
-        CATransaction.begin()
-        CATransaction.setAnimationDuration(0.25)
-        CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeInEaseOut))
-        UIView.animate(withDuration: 0.25) {
-            self.updateState()
+    }
+    
+    @objc func didLongPress(_ sender: UILongPressGestureRecognizer) {
+        if sender.state == .began {
+            onLongTap?()
         }
-        CATransaction.commit()
+    }
+    
+    private func updateState(animated: Bool) {
+        if animated {
+            CATransaction.begin()
+            CATransaction.setAnimationDuration(0.25)
+            CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeInEaseOut))
+            UIView.animate(withDuration: 0.25) {
+                self.updateState()
+            }
+            CATransaction.commit()
+        } else {
+            updateState()
+        }
     }
     
     private func updateState() {

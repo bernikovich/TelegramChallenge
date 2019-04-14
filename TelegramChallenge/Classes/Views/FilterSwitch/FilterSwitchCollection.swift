@@ -11,6 +11,7 @@ class FilterSwitchCollection: BaseView {
         let switchItems: [FilterSwitch.Item]
         var states: [Bool]
         let onSelectItem: ((Int) -> Void)
+        let onLongPressItem: ((Int) -> Void)
     }
     
     private enum UIConstants {
@@ -20,17 +21,6 @@ class FilterSwitchCollection: BaseView {
     
     private var item: Item?
     private var previousViews: [FilterSwitch] = []
-    
-    private func onSelectItem(_ index: Int) {
-        guard var item = item else {
-            return
-        }
-        
-        if index < item.states.count {
-            item.states[index] = !item.states[index]
-        }
-        self.item = item
-    }
     
     private func relayout() {
         previousViews.forEach {
@@ -48,10 +38,12 @@ class FilterSwitchCollection: BaseView {
         previousViews = item.switchItems.enumerated().map { index, subitem in
             let view = FilterSwitch()
             view.setup(with: subitem)
-            view.isSelected = item.states[index]
-            view.onSelect = { [weak self] in
-                self?.onSelectItem(index)
+            view.updateState(item.states[index], animated: false)
+            view.onSelect = {
                 item.onSelectItem(index)
+            }
+            view.onLongTap = {
+                item.onLongPressItem(index)
             }
             
             let size = FilterSwitch.preferredSize(for: subitem)
@@ -79,6 +71,21 @@ class FilterSwitchCollection: BaseView {
     func setup(with item: Item) {
         self.item = item
         relayout()
+    }
+    
+    func updateStates(_ states: [Bool], animated: Bool) {
+        guard var item = item, item.switchItems.count == states.count else {
+            return
+        }
+        
+        item.states = states
+        self.item = item
+        
+        if item.states.count == previousViews.count {
+            zip(item.states, previousViews).forEach { isSelected, view in
+                view.updateState(isSelected, animated: animated)
+            }
+        }
     }
     
     static func preferredSize(for item: Item, containerWidth: CGFloat) -> CGFloat {
