@@ -14,14 +14,8 @@ final class TwoLinesChartView: BaseChartView, ChartView {
     
     private var leadingPlotLineLayers: [PlotLineLayer] = []
     private var trailingPlotLineLayers: [PlotLineLayer] = []
-    //private var plotLineLayers: [PlotLineLayer] = []
     
-    private var leadingColumnPath: CGPath?
-    private var trailingColumnPath: CGPath?
     private var columnPaths: [CGPath] = []
-    
-    private var leadingColumnLayer: ChartColumnLayer?
-    private var trailingColumnLayer: ChartColumnLayer?
     private var columnLayers: [ChartColumnLayer] = []
     
     private lazy var leadingPlotCalculator = PlotCalculator(
@@ -41,7 +35,7 @@ final class TwoLinesChartView: BaseChartView, ChartView {
     private var oldTrailingPlot: Plot?
     
     private let transformCalculator = TransformCalculator()
-    private var valueBoxHandler: ChartValueBoxHandler?
+    private var valueBoxHandler: ValueBoxViewTransitionsHandler?
     
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -60,15 +54,8 @@ final class TwoLinesChartView: BaseChartView, ChartView {
         leadingPlotLineLayers = []
         trailingPlotLineLayers.forEach { $0.removeFromSuperlayer() }
         trailingPlotLineLayers = []
-//        plotLineLayers.forEach { $0.removeFromSuperlayer() }
-//        plotLineLayers = []
         
-        leadingColumnPath = nil
-        trailingColumnPath = nil
         columnPaths = []
-        
-        leadingColumnLayer = nil
-        trailingColumnLayer = nil
         columnLayers.forEach { $0.removeFromSuperlayer() }
         columnLayers = []
         
@@ -92,24 +79,7 @@ final class TwoLinesChartView: BaseChartView, ChartView {
     }
     
     func setupVisibleColumns(_ visibleColumns: [Column], animated: Bool = true) {
-//        guard self.visibleColumns != visibleColumns else {
-//            return
-//        }
-//
-//        hideValueBox(animated: animated)
-//        self.visibleColumns = visibleColumns
-//
-//        let hasData = !visibleColumns.isEmpty
-//        UIView.animate(withDuration: animated ? SharedConstants.animationDuration : 0) {
-//            zip(self.chart.columns, self.columnLayers).forEach { line, layer in
-//                layer.opacity = visibleColumns.contains(line) ? 1 : 0
-//            }
-//        }
-//
-//        if hasData {
-//            plotCalculator.updatePreloadedPlots(columns: visibleColumns)
-//            updateWithRange(range, forceReload: true, animated: animated)
-//        }
+
     }
     
     func updateWithRange(_ range: ClosedRange<CGFloat>, forceReload: Bool, animated: Bool) {
@@ -468,28 +438,49 @@ private extension TwoLinesChartView {
     }
     
     private func updateBoxView(state: UIGestureRecognizer.State, gesture: UIGestureRecognizer) {
-        guard let plot = leadingPlot, !isSimple, let parent = superview else {
+        guard let leadingPlot = leadingPlot, let trailingPlot = trailingPlot, !isSimple else {
             return
         }
+        
+        let parent = self
         let location = gesture.location(in: columnsContainerView)
         let index = Int(round((location.x / columnsContainerView.frame.width) * CGFloat(chart.legend.values.count - 1)))
-        let safeIndex = (0...(chart.legend.values.count - 1)).clamp(index)
+        let indexRange = chart.legend.indexRange(for: range)
+        let safeIndex = indexRange.clamp(index)
         let x = gesture.location(in: parent).x
         
         weak var weakSelf = self
-        func update(handler: ChartValueBoxHandler) {
-            let box = handler.box
+        func update(handler: ValueBoxViewTransitionsHandler) {
+            let view = handler.view
             let newDate = chart.legend.values[safeIndex]
-            let updated = box.lastDate != newDate
-            box.update(date: newDate, columns: visibleColumns, index: safeIndex)
-            let clampedX = ((box.frame.width / 2 + 4)...(parent.frame.width - 4 - box.frame.width / 2)).clamp(x)
-            box.center = CGPoint(x: clampedX, y: box.frame.height / 2 + 8)
+            let oldDate = view.lastDate
+            let updated = oldDate != newDate
+            view.update(date: newDate, columns: visibleColumns, index: safeIndex)
             
             let lineX = (CGFloat(safeIndex) / CGFloat(chart.legend.values.count - 1)) * columnsContainerView.frame.width
-            let line = handler.line
-            line.frame.size.height = columnsContainerView.frame.height
-            line.center = CGPoint(x: lineX, y: columnsContainerView.frame.height / 2)
-            line.setupWithLines(visibleColumns, index: safeIndex, range: plot.range)
+            let lineView = handler.lineView
+            lineView.frame.size.height = columnsContainerView.frame.height
+            lineView.center = CGPoint(x: lineX, y: columnsContainerView.frame.height / 2)
+            
+            if visibleColumns.count == 2 {
+                lineView.setupWithLines(visibleColumns, ranges: [leadingPlot.range, trailingPlot.range], index: safeIndex)
+            } else {
+                // Not possible. Sorry for this code.
+            }
+            
+            let isPresenting = oldDate == nil
+            let linePercent: CGFloat = visibleColumns.enumerated().map({ index, column in
+                let range = (index == 0 ? leadingPlot : trailingPlot).range
+                let delta = CGFloat(range.upperBound - range.lowerBound)
+                return CGFloat(column.values[safeIndex] - range.lowerBound) / delta
+            }).max() ?? 1
+            
+            ValueBoxViewPositionHandler.updatePosition(
+                of: view,
+                in: parent,
+                isPresenting: isPresenting,
+                touchX: x,
+                linePercent: linePercent)
             
             if #available(iOS 10.0, *) {
                 if updated {
@@ -500,26 +491,28 @@ private extension TwoLinesChartView {
         
         switch state {
         case .began:
-            valueBoxHandler?.hide(animated: true)
-            let handler = ChartValueBoxHandler()
-            valueBoxHandler = handler
-            parent.addSubview(handler.box)
-            columnsContainerView.addSubview(handler.line)
-            update(handler: handler)
-            handler.show()
+            if let oldHandler = valueBoxHandler {
+                update(handler: oldHandler)
+            } else {
+                let handler = ValueBoxViewTransitionsHandler(style: .normal)
+                valueBoxHandler = handler
+                parent.addSubview(handler.view)
+                columnsContainerView.addSubview(handler.lineView)
+                update(handler: handler)
+                handler.show()
+            }
         case .changed:
             guard let handler = valueBoxHandler else {
                 return
             }
             update(handler: handler)
         case .cancelled, .ended, .failed, .possible:
-            valueBoxHandler?.hide(animated: true)
             break
         @unknown default:
             break
         }
     }
-    
+
 }
 
 extension TwoLinesChartView: AppearanceSupport {

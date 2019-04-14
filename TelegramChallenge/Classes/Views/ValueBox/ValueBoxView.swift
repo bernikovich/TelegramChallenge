@@ -5,7 +5,7 @@
 
 import UIKit
 
-final class BarChartValueBoxView: BaseView {
+final class ValueBoxView: BaseView {
     
     enum Style {
         case normal, stacked
@@ -22,7 +22,7 @@ final class BarChartValueBoxView: BaseView {
     }()
     
     private let valuesContainer = UIView()
-    private var titleValueViews: [TitleValueView] = []
+    private var titleValueViews: [ValueBoxTitleValueView] = []
     
     init(style: Style) {
         self.style = style
@@ -57,23 +57,23 @@ final class BarChartValueBoxView: BaseView {
         titleLabel.autoresizingMask = [.flexibleRightMargin, .flexibleBottomMargin]
         
         var oldTitleValueViews = titleValueViews
-        var newTitleValueViews: [TitleValueView] = []
+        var newTitleValueViews: [ValueBoxTitleValueView] = []
         
-        let sources: [TitleValueView.Source]
+        let sources: [ValueBoxTitleValueView.Source]
         switch style {
         case .normal:
-            sources = columns.map { TitleValueView.Source.column($0) }
+            sources = columns.map { ValueBoxTitleValueView.Source.column($0) }
         case .stacked:
-            sources = columns.map { TitleValueView.Source.column($0) } + (columns.count > 1 ? [.all] : [])
+            sources = columns.map { ValueBoxTitleValueView.Source.column($0) } + (columns.count > 1 ? [.all] : [])
         }
         
         sources.forEach { source in
-            let view: TitleValueView
+            let view: ValueBoxTitleValueView
             if let viewIndex = oldTitleValueViews.firstIndex(where: { $0.source == source }) {
                 view = oldTitleValueViews[viewIndex]
                 oldTitleValueViews.remove(at: viewIndex)
             } else {
-                view = TitleValueView(source: source)
+                view = ValueBoxTitleValueView(source: source)
             }
             newTitleValueViews.append(view)
             
@@ -129,14 +129,14 @@ final class BarChartValueBoxView: BaseView {
     private let backgroundView = UIView()
 }
 
-extension BarChartValueBoxView: AppearanceSupport {
+extension ValueBoxView: AppearanceSupport {
     func apply(theme: Theme) {
         titleLabel.textColor = Appearance.theme.chartBoxText
         backgroundView.backgroundColor = theme.background
     }
 }
 
-private extension BarChartValueBoxView {
+private extension ValueBoxView {
     static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "E',' d MMM yyyy"

@@ -51,4 +51,7 @@ enum SharedConstants {
     
     // According to provided screenshots.
     static let numberOfPlotLines: Double = 5.5
+    
+    // Can be simplified in cell.
+    static let horizontalInset: CGFloat = 16
 }

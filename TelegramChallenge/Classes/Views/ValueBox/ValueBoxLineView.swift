@@ -5,8 +5,10 @@
 
 import UIKit
 
-final class ChartValueBoxLineView: BaseView {
+final class ValueBoxLineView: BaseView {
 
+    private let line = UIView()
+    
     override func setup() {
         super.setup()
         subscribeToAppearanceUpdates()
@@ -14,16 +16,20 @@ final class ChartValueBoxLineView: BaseView {
         frame.size.width = Constants.bubbleSize
     }
 
-    func setupWithLines(_ lines: [Column], index: Int, range: ClosedRange<Int64>) {
-        subviews
-            .filter { $0 is BubbleView }
-            .forEach { $0.removeFromSuperview() }
-        let delta = CGFloat(range.upperBound - range.lowerBound)
-        for line in lines {
-            let value = CGFloat(line.values[index] - range.lowerBound) / delta
+    func setupWithLines(_ columns: [Column], range: ClosedRange<Int64>, index: Int) {
+        let ranges = [ClosedRange<Int64>](repeating: range, count: columns.count)
+        setupWithLines(columns, ranges: ranges, index: index)
+    }
+    
+    func setupWithLines(_ columns: [Column], ranges: [ClosedRange<Int64>], index: Int) {
+        subviews.filter({ $0 is BubbleView }).forEach { $0.removeFromSuperview() }
+        columns.enumerated().forEach { columnIndex, column in
+            let range = ranges[columnIndex]
+            let delta = CGFloat(range.upperBound - range.lowerBound)
+            let value = CGFloat(column.values[index] - range.lowerBound) / delta
             let y = frame.height * (1 - value)
             let bubble = BubbleView()
-            bubble.layer.borderColor = UIColor(hexString: line.colorHex).cgColor
+            bubble.layer.borderColor = UIColor(hexString: column.colorHex).cgColor
             bubble.center = CGPoint(x: frame.width / 2, y: y)
             addSubview(bubble)
         }
@@ -31,14 +37,12 @@ final class ChartValueBoxLineView: BaseView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        line.frame = CGRect(x: frame.width / 2 - 0.5, y: 0, width: 1, height: frame.height)
+        line.frame = CGRect(x: frame.width / 2, y: 0, width: 2, height: frame.height)
     }
-
-    private let line = UIView()
 
 }
 
-extension ChartValueBoxLineView: AppearanceSupport {
+extension ValueBoxLineView: AppearanceSupport {
     func apply(theme: Theme) {
         line.backgroundColor = Appearance.theme.chartPlotLine
     }
@@ -65,6 +69,6 @@ extension BubbleView: AppearanceSupport {
 
 private enum Constants {
 
-    static let bubbleSize: CGFloat = 9
+    static let bubbleSize: CGFloat = 8
 
 }

@@ -173,9 +173,9 @@ class ChartTableViewCell: BaseTableViewCell {
         }
         
         trimmerView.frame = CGRect(
-            x: UIConstants.horizontalInset,
+            x: 0,
             y: legendView.frame.maxY + UIConstants.trimmerOffset,
-            width: contentWidth,
+            width: parentFrame.width,
             height: UIConstants.trimmerViewHeight
         )
         
@@ -364,6 +364,6 @@ private enum UIConstants {
     static let filterOffset: CGFloat = 16
     static let bottomInset: CGFloat = 16
     
-    static let horizontalInset: CGFloat = 16
+    static let horizontalInset: CGFloat = SharedConstants.horizontalInset
     
 }

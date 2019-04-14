@@ -29,7 +29,7 @@ final class BarChartView: BaseChartView, ChartView {
     private var oldPlot: Plot?
     
     private let transformCalculator = TransformCalculator()
-    private var valueBoxHandler: BarChartValueBoxAppearance?
+    private var valueBoxHandler: ValueBoxViewTransitionsHandler?
     
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -467,12 +467,14 @@ private extension BarChartView {
     }
     
     private func updateBoxView(state: UIGestureRecognizer.State, gesture: UIGestureRecognizer) {
-        guard let plot = plot, !isSimple, let parent = superview else {
+        guard let plot = plot, !isSimple else {
             return
         }
+        
+        let parent = self
         let location = gesture.location(in: columnsContainerView)
         let index = Int(round((location.x / columnsContainerView.frame.width) * CGFloat(chart.legend.values.count - 1)))
-        let indexRange = chart.columns.first?.indexRange(for: range) ?? 0...0
+        let indexRange = chart.legend.indexRange(for: range)
         let safeIndex = indexRange.clamp(index)
         let x = gesture.location(in: parent).x
         
@@ -484,50 +486,25 @@ private extension BarChartView {
         fadeMaskLayer.path = path.cgPath
         
         weak var weakSelf = self
-        func update(handler: BarChartValueBoxAppearance) {
+        func update(handler: ValueBoxViewTransitionsHandler) {
             let view = handler.view
             let newDate = chart.legend.values[safeIndex]
             let oldDate = view.lastDate
             let updated = oldDate != newDate
             view.update(date: newDate, columns: visibleColumns, index: safeIndex)
-
-            let spacing: CGFloat = 12
-            let leadingPosition = x - (view.frame.width / 2 + spacing)
-            let trailingPosition = x + (view.frame.width / 2 + spacing)
-            let leadingPositionPossible = leadingPosition - view.frame.width / 2 - spacing >= parent.bounds.minX
-            let trailingPositionPossible = trailingPosition + view.frame.width / 2 + spacing <= parent.bounds.maxX
             
             let isPresenting = oldDate == nil
+            let range = plot.range
+            let delta = CGFloat(range.upperBound - range.lowerBound)
+            let linePercent = CGFloat(stackBarSum.values[safeIndex] - range.lowerBound) / delta
             
-            let centerX: CGFloat
-            if !leadingPositionPossible && !trailingPositionPossible {
-                centerX = trailingPosition
-            } else if !leadingPositionPossible {
-                centerX = trailingPosition
-            } else if !trailingPositionPossible {
-                centerX = leadingPosition
-            } else {
-                if isPresenting {
-                    centerX = trailingPosition
-                } else {
-                    // Nearest.
-                    let currentCenterX = view.frame.midX
-                    if abs(currentCenterX - leadingPosition) < abs(currentCenterX - trailingPosition) {
-                        centerX = leadingPosition
-                    } else {
-                        centerX = trailingPosition
-                    }
-                }
-            }
-            
-            // Do not animate when position changed by pan.
-            let isMovedFarAway = abs(centerX - view.center.x) > 10
-            let shouldAnimate = !isPresenting && isMovedFarAway
-            
-            UIView.animate(withDuration: shouldAnimate ? SharedConstants.animationDuration : 0) {
-                view.center = CGPoint(x: centerX, y: view.frame.height / 2 + 8)
-            }
-            
+            ValueBoxViewPositionHandler.updatePosition(
+                of: view,
+                in: parent,
+                isPresenting: isPresenting,
+                touchX: x,
+                linePercent: linePercent)
+
             if #available(iOS 10.0, *) {
                 if updated {
                     weakSelf?.feedbackGenerator.selectionChanged()
@@ -540,7 +517,7 @@ private extension BarChartView {
             if let oldHandler = valueBoxHandler {
                 update(handler: oldHandler)
             } else {
-                let handler = BarChartValueBoxAppearance()
+                let handler = ValueBoxViewTransitionsHandler(style: .stacked)
                 valueBoxHandler = handler
                 parent.addSubview(handler.view)
                 update(handler: handler)

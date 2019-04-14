@@ -5,7 +5,7 @@
 
 import UIKit
 
-class TitleValueView: BaseView, AppearanceSupport {
+class ValueBoxTitleValueView: BaseView, AppearanceSupport {
     
     enum Source: Equatable {
         case column(Column)

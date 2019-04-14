@@ -32,7 +32,15 @@ final class TrimmerView: BaseView {
         }
     }
     
+    private let contentView = UIView()
     private let chartView: ChartView
+    private let fadeView: UIView = {
+        let view = UIView()
+        view.layer.cornerRadius = 6
+        return view
+    }()
+    private let trimRangeView = TrimRangeView()
+    private var trimType: TrimType?
     
     init(chartView: ChartView) {
         self.chartView = chartView
@@ -53,9 +61,10 @@ final class TrimmerView: BaseView {
         chartView.layer.masksToBounds = true
         chartView.mask = trimRangeView
         
-        addSubview(chartView)
-        addSubview(fadeView)
-        addSubview(trimRangeView)
+        addSubview(contentView)
+        contentView.addSubview(chartView)
+        contentView.addSubview(fadeView)
+        contentView.addSubview(trimRangeView)
 
         let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
         panGesture.maximumNumberOfTouches = 1
@@ -68,12 +77,11 @@ final class TrimmerView: BaseView {
 
         defer { maskChartView() }
 
+        contentView.frame = bounds.insetBy(dx: SharedConstants.horizontalInset, dy: 0)
+        
         let oldFrame = chartView.frame
 
-        chartView.frame = bounds.insetBy(
-            dx: 0,
-            dy: TrimRangeView.verticalInset
-        )
+        chartView.frame = contentView.bounds.insetBy(dx: 0, dy: TrimRangeView.verticalInset)
         fadeView.frame = chartView.frame
 
         guard oldFrame != chartView.frame else { return }
@@ -105,15 +113,6 @@ final class TrimmerView: BaseView {
         )
     }
 
-    private let fadeView: UIView = {
-        let view = UIView()
-        view.layer.cornerRadius = 6
-        return view
-    }()
-    private let trimRangeView = TrimRangeView()
-    private var gestureAnchor: CGPoint?
-    private var trimType: TrimType?
-
 }
 
 extension TrimmerView: AppearanceSupport {
@@ -126,8 +125,8 @@ extension TrimmerView: AppearanceSupport {
 extension TrimmerView: UIGestureRecognizerDelegate {
 
     override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-        let location = gestureRecognizer.location(in: self)
-        return trimRangeView.frame
+        let location = gestureRecognizer.location(in: trimRangeView)
+        return trimRangeView.bounds
             .insetBy(dx: -TrimmerConstants.trimTapExpandOffset, dy: 0)
             .contains(location)
     }
@@ -137,7 +136,7 @@ extension TrimmerView: UIGestureRecognizerDelegate {
 private extension TrimmerView {
 
     func maskChartView() {
-        let maskFrame = trimRangeView.frame.insetBy(dx: TrimRangeView.horizontalInset, dy: 0)
+        let maskFrame = fadeView.convert(trimRangeView.frame, from: trimRangeView.superview ?? self).insetBy(dx: TrimRangeView.horizontalInset, dy: 0)
         fadeView.mask(withRect: maskFrame, inverse: true)
     }
 
@@ -150,17 +149,13 @@ private extension TrimmerView {
 
         switch gesture.state {
         case .began:
-            gestureAnchor = newLocation
             trimType = calculateTrimType(for: newLocation)
         case .changed:
-            guard let anchor = gestureAnchor else { break }
-
-            let delta = newLocation.x - anchor.x
-            let updates = calculateTrimFrameUpdates(delta: delta)
+            let translation = gesture.translation(in: self)
+            gesture.setTranslation(.zero, in: self)
+            let updates = calculateTrimFrameUpdates(delta: translation.x)
             applyTrimUpdates(x: updates.x, width: updates.width)
-            gestureAnchor = newLocation
         case .cancelled, .ended:
-            gestureAnchor = nil
             trimType = nil
         case .failed, .possible:
             break
@@ -173,7 +168,7 @@ private extension TrimmerView {
         guard let trimType = self.trimType else { return }
 
         let minX: CGFloat = 0
-        let maxX = frame.width - trimRangeView.frame.width
+        let maxX = chartView.frame.width - trimRangeView.frame.width
         let minWidth = trimRangeWidth(for: TrimmerConstants.minVisibility)
         let maxWidth = trimRangeWidth(for: TrimmerConstants.maxVisibility)
 
@@ -183,21 +178,23 @@ private extension TrimmerView {
         var proposedX = oldX + x
         var proposedWidth = oldWidth + width
 
-        let threshold: CGFloat = 2
+        let threshold: CGFloat = 3
         switch trimType {
-        case .left:
+        case .leading:
             if proposedX <= minX || !(minWidth...maxWidth).contains(proposedWidth) {
                 let xDelta = abs(proposedX - minX)
                 let widthDelta = abs(proposedWidth - minWidth)
                 let minDelta = min(xDelta, widthDelta)
                 proposedX -= x.sign * minDelta
                 proposedWidth -= width.sign * minDelta
-                if x < 0 {
-                    proposedX = proposedX.round(to: minX, threshold: threshold)
-                }
             }
-            
-        case .right:
+            if x < 0 {
+                let previous = proposedX
+                proposedX = proposedX.round(to: minX, threshold: threshold)
+                let delta = proposedX - previous
+                proposedWidth -= delta
+            }
+        case .trailing:
             let rightMaxWidth = maxWidth - oldX
             proposedWidth = (minWidth...rightMaxWidth).clamp(proposedWidth)
             if width > 0 {
@@ -231,25 +228,24 @@ private extension TrimmerView {
         guard let trimType = self.trimType else { return (0, 0) }
 
         switch trimType {
-        case .left: return (delta, -delta)
+        case .leading: return (delta, -delta)
         case .center: return (delta, 0)
-        case .right: return (0, delta)
+        case .trailing: return (0, delta)
         }
     }
 
     private func calculateTrimType(for anchor: CGPoint) -> TrimType? {
         let convertedAnchor = trimRangeView.convert(anchor, from: self)
         switch convertedAnchor.x / trimRangeView.frame.width {
-        case ..<0.25: return .left
+        case ..<0.25: return .leading
         case 0.25..<0.75: return .center
-        case 0.75...
-            : return .right
+        case 0.75...: return .trailing
         default: return nil
         }
     }
 
     enum TrimType {
-        case left, center, right
+        case leading, center, trailing
     }
 }
 

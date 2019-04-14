@@ -21,7 +21,7 @@ final class LineChartView: BaseChartView, ChartView {
     private var oldPlot: Plot?
     
     private let transformCalculator = TransformCalculator()
-    private var valueBoxHandler: ChartValueBoxHandler?
+    private var valueBoxHandler: ValueBoxViewTransitionsHandler?
     
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -376,28 +376,42 @@ private extension LineChartView {
     }
 
     private func updateBoxView(state: UIGestureRecognizer.State, gesture: UIGestureRecognizer) {
-        guard let plot = plot, !isSimple, let parent = superview else {
+        guard let plot = plot, !isSimple else {
             return
         }
+        
+        let parent = self
         let location = gesture.location(in: columnsContainerView)
         let index = Int(round((location.x / columnsContainerView.frame.width) * CGFloat(chart.legend.values.count - 1)))
-        let safeIndex = (0...(chart.legend.values.count - 1)).clamp(index)
+        let indexRange = chart.legend.indexRange(for: range)
+        let safeIndex = indexRange.clamp(index)
         let x = gesture.location(in: parent).x
 
         weak var weakSelf = self
-        func update(handler: ChartValueBoxHandler) {
-            let box = handler.box
+        func update(handler: ValueBoxViewTransitionsHandler) {
+            let view = handler.view
             let newDate = chart.legend.values[safeIndex]
-            let updated = box.lastDate != newDate
-            box.update(date: newDate, columns: visibleColumns, index: safeIndex)
-            let clampedX = ((box.frame.width / 2 + 4)...(parent.frame.width - 4 - box.frame.width / 2)).clamp(x)
-            box.center = CGPoint(x: clampedX, y: box.frame.height / 2 + 8)
+            let oldDate = view.lastDate
+            let updated = oldDate != newDate
+            view.update(date: newDate, columns: visibleColumns, index: safeIndex)
 
             let lineX = (CGFloat(safeIndex) / CGFloat(chart.legend.values.count - 1)) * columnsContainerView.frame.width
-            let line = handler.line
-            line.frame.size.height = columnsContainerView.frame.height
-            line.center = CGPoint(x: lineX, y: columnsContainerView.frame.height / 2)
-            line.setupWithLines(visibleColumns, index: safeIndex, range: plot.range)
+            let lineView = handler.lineView
+            lineView.frame.size.height = columnsContainerView.frame.height
+            lineView.center = CGPoint(x: lineX, y: columnsContainerView.frame.height / 2)
+            lineView.setupWithLines(visibleColumns, range: plot.range, index: safeIndex)
+            
+            let isPresenting = oldDate == nil
+            let range = plot.range
+            let delta = CGFloat(range.upperBound - range.lowerBound)
+            let linePercent = visibleColumns.map({ CGFloat($0.values[safeIndex] - range.lowerBound) / delta }).max() ?? 1
+            
+            ValueBoxViewPositionHandler.updatePosition(
+                of: view,
+                in: parent,
+                isPresenting: isPresenting,
+                touchX: x,
+                linePercent: linePercent)
             
             if #available(iOS 10.0, *) {
                 if updated {
@@ -405,23 +419,25 @@ private extension LineChartView {
                 }
             }
         }
-
+        
         switch state {
         case .began:
-            valueBoxHandler?.hide(animated: true)
-            let handler = ChartValueBoxHandler()
-            valueBoxHandler = handler
-            parent.addSubview(handler.box)
-            columnsContainerView.addSubview(handler.line)
-            update(handler: handler)
-            handler.show()
+            if let oldHandler = valueBoxHandler {
+                update(handler: oldHandler)
+            } else {
+                let handler = ValueBoxViewTransitionsHandler(style: .normal)
+                valueBoxHandler = handler
+                parent.addSubview(handler.view)
+                columnsContainerView.addSubview(handler.lineView)
+                update(handler: handler)
+                handler.show()
+            }
         case .changed:
             guard let handler = valueBoxHandler else {
                 return
             }
             update(handler: handler)
         case .cancelled, .ended, .failed, .possible:
-            valueBoxHandler?.hide(animated: true)
             break
         @unknown default:
             break

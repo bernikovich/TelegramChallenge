@@ -15,7 +15,7 @@ final class PercentChartView: BaseChartView, ChartView {
     private let plot = Plot(range: 0...100, step: 25)
     
     private let transformCalculator = TransformCalculator()
-    private var valueBoxHandler: BarChartValueBoxAppearance?
+    private var valueBoxHandler: ValueBoxViewTransitionsHandler?
     
     override func layoutSubviews() {
         super.layoutSubviews()
@@ -302,74 +302,46 @@ final class PercentChartView: BaseChartView, ChartView {
 }
 
 private extension PercentChartView {
-    
+
     func hideValueBox(animated: Bool) {
         valueBoxHandler?.hide(animated: animated)
         valueBoxHandler = nil
     }
     
     private func updateBoxView(state: UIGestureRecognizer.State, gesture: UIGestureRecognizer) {
-        guard !isSimple, let parent = superview else {
+        guard !isSimple else {
             return
         }
         
+        let parent = self
         let location = gesture.location(in: columnsContainerView)
         let index = Int(round((location.x / columnsContainerView.frame.width) * CGFloat(chart.legend.values.count - 1)))
-        let indexRange = chart.columns.first?.indexRange(for: range) ?? 0...0
+        let indexRange = chart.legend.indexRange(for: range)
         let safeIndex = indexRange.clamp(index)
         let x = gesture.location(in: parent).x
         
-        let pointWidth = CGFloat(1) / CGFloat(chart.legend.values.count)
-        let maskRect = CGRect(x: CGFloat(safeIndex) * pointWidth, y: 0, width: pointWidth, height: 1)
-        let path = UIBezierPath(rect: maskRect)
-//        path.append(UIBezierPath(rect: fadeMaskLayer.bounds))
-//        fadeMaskLayer.fillRule = .evenOdd
-//        fadeMaskLayer.path = path.cgPath
-        
         weak var weakSelf = self
-        func update(handler: BarChartValueBoxAppearance) {
+        func update(handler: ValueBoxViewTransitionsHandler) {
             let view = handler.view
             let newDate = chart.legend.values[safeIndex]
             let oldDate = view.lastDate
             let updated = oldDate != newDate
             view.update(date: newDate, columns: visibleColumns, index: safeIndex)
             
-            let spacing: CGFloat = 12
-            let leadingPosition = x - (view.frame.width / 2 + spacing)
-            let trailingPosition = x + (view.frame.width / 2 + spacing)
-            let leadingPositionPossible = leadingPosition - view.frame.width / 2 - spacing >= parent.bounds.minX
-            let trailingPositionPossible = trailingPosition + view.frame.width / 2 + spacing <= parent.bounds.maxX
+            let lineX = (CGFloat(safeIndex) / CGFloat(chart.legend.values.count - 1)) * columnsContainerView.frame.width
+            let lineView = handler.lineView
+            lineView.frame.size.height = columnsContainerView.frame.height
+            lineView.center = CGPoint(x: lineX, y: columnsContainerView.frame.height / 2)
+            lineView.setupWithLines(visibleColumns, range: plot.range, index: safeIndex)
             
             let isPresenting = oldDate == nil
             
-            let centerX: CGFloat
-            if !leadingPositionPossible && !trailingPositionPossible {
-                centerX = trailingPosition
-            } else if !leadingPositionPossible {
-                centerX = trailingPosition
-            } else if !trailingPositionPossible {
-                centerX = leadingPosition
-            } else {
-                if isPresenting {
-                    centerX = trailingPosition
-                } else {
-                    // Nearest.
-                    let currentCenterX = view.frame.midX
-                    if abs(currentCenterX - leadingPosition) < abs(currentCenterX - trailingPosition) {
-                        centerX = leadingPosition
-                    } else {
-                        centerX = trailingPosition
-                    }
-                }
-            }
-            
-            // Do not animate when position changed by pan.
-            let isMovedFarAway = abs(centerX - view.center.x) > 10
-            let shouldAnimate = !isPresenting && isMovedFarAway
-            
-            UIView.animate(withDuration: shouldAnimate ? SharedConstants.animationDuration : 0) {
-                view.center = CGPoint(x: centerX, y: view.frame.height / 2 + 8)
-            }
+            ValueBoxViewPositionHandler.updatePosition(
+                of: view,
+                in: parent,
+                isPresenting: isPresenting,
+                touchX: x,
+                linePercent: 1)
             
             if #available(iOS 10.0, *) {
                 if updated {
@@ -383,12 +355,12 @@ private extension PercentChartView {
             if let oldHandler = valueBoxHandler {
                 update(handler: oldHandler)
             } else {
-                let handler = BarChartValueBoxAppearance()
+                let handler = ValueBoxViewTransitionsHandler(style: .normal)
                 valueBoxHandler = handler
                 parent.addSubview(handler.view)
+                columnsContainerView.addSubview(handler.lineView)
                 update(handler: handler)
                 handler.show()
-//                fadeLayer.opacity = 1
             }
         case .changed:
             guard let handler = valueBoxHandler else {

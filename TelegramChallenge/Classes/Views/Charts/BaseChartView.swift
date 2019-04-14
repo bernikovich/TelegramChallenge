@@ -84,7 +84,7 @@ class BaseChartView: BaseView {
     override func layoutSubviews() {
         super.layoutSubviews()
         
-        let inset: CGFloat = isSimple ? 0 : 16
+        let inset: CGFloat = isSimple ? 0 : SharedConstants.horizontalInset
         contentView.frame = CGRect(x: inset, y: 0, width: bounds.width - 2 * inset, height: bounds.height)
         plotContainerView.frame = contentView.frame
     }
