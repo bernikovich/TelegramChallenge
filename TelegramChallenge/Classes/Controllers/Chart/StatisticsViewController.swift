@@ -7,7 +7,7 @@ import UIKit
 
 class StatisticsViewController: BaseTableViewController {
     
-    private var chartViewModels: [ChartViewModel] = []
+    private var items: [BaseChartTableViewCell.Item] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -32,8 +32,22 @@ class StatisticsViewController: BaseTableViewController {
     }
 
     private func loadCharts() {
-        ChartFetchService.loadCharts { [weak self] charts in
-            self?.chartViewModels = charts.map(ChartViewModel.init)
+        ChartFetchService.loadCharts { [weak self] chartInfoCollection in
+            self?.items = chartInfoCollection.map { chartInfo in
+                let chart = chartInfo.mainChart
+                let detailsClosure: ((Int) -> ChartControlsViewModel?) = { index -> ChartControlsViewModel? in
+                    let date = chart.legend.values[index]
+                    let hourFormatter = DateFormatter()
+                    hourFormatter.locale = Locale(identifier: "en_US_POSIX")
+                    hourFormatter.dateFormat = "hh:mm"
+                    return chartInfo.detailsChartForDate(date).map { ChartControlsViewModel(chart: $0, legendDateFormatter: hourFormatter) }
+                }
+                
+                return BaseChartTableViewCell.Item(
+                    mainViewModel: ChartControlsViewModel(chart: chart, legendDateFormatter: nil),
+                    detailsViewModelForDataAtIndex: detailsClosure
+                )
+            }
             self?.tableView.reloadData()
         }
     }
@@ -80,7 +94,7 @@ extension StatisticsViewController: UITableViewDelegate, UITableViewDataSource {
     }
 
     func numberOfSections(in tableView: UITableView) -> Int {
-        return chartViewModels.count
+        return items.count
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -88,45 +102,51 @@ extension StatisticsViewController: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let start = CACurrentMediaTime()
+        
         let section = indexPath.section
-        let viewModel = chartViewModels[section]
+        let item = items[section]
+        let viewModel = item.mainViewModel
         
         // TODO: Implement with some kind of switch.
+        let resultCell: BaseChartTableViewCell
         if viewModel.chart.isPercentage {
             let cell: PercentChartTableViewCell = tableView.dequeueReusableCell(for: indexPath)
-            cell.setupWith(viewModel: viewModel)
-            return cell
+            resultCell = cell
         } else if viewModel.chart.isStacked {
             let cell: BarChartTableViewCell = tableView.dequeueReusableCell(for: indexPath)
-            cell.setupWith(viewModel: viewModel)
-            return cell
+            resultCell = cell
         } else if viewModel.chart.columns.count == 1, viewModel.chart.columns[0].style == .bar {
             let cell: SingleBarChartTableViewCell = tableView.dequeueReusableCell(for: indexPath)
-            cell.setupWith(viewModel: viewModel)
-            return cell
+            resultCell = cell
         } else if viewModel.chart.isYScaled && viewModel.chart.columns.count == 2 {
             let cell: TwoLinesChartTableViewCell = tableView.dequeueReusableCell(for: indexPath)
-            cell.setupWith(viewModel: viewModel)
-            return cell
+            resultCell = cell
         } else {
             let cell: LineChartTableViewCell = tableView.dequeueReusableCell(for: indexPath)
-            cell.setupWith(viewModel: viewModel)
-            return cell
+            resultCell = cell
         }
+        resultCell.setup(with: item)
+        
+        let end = CACurrentMediaTime()
+        print("cellForRowAt: \(end - start)")
+        
+        return resultCell
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        let viewModel = chartViewModels[indexPath.section]
+        let item = items[indexPath.section]
+        let viewModel = item.mainViewModel
         if viewModel.chart.isPercentage {
-            return PercentChartTableViewCell.preferredHeight(for: viewModel, containerWidth: tableView.bounds.width)
+            return PercentChartTableViewCell.preferredHeight(for: item, containerWidth: tableView.bounds.width)
         } else if viewModel.chart.isStacked {
-            return BarChartTableViewCell.preferredHeight(for: viewModel, containerWidth: tableView.bounds.width)
+            return BarChartTableViewCell.preferredHeight(for: item, containerWidth: tableView.bounds.width)
         } else if viewModel.chart.columns.count == 1, viewModel.chart.columns[0].style == .bar {
-            return  SingleBarChartTableViewCell.preferredHeight(for: viewModel, containerWidth: tableView.bounds.width)
+            return  SingleBarChartTableViewCell.preferredHeight(for: item, containerWidth: tableView.bounds.width)
         } else if viewModel.chart.isYScaled && viewModel.chart.columns.count == 2 {
-            return TwoLinesChartTableViewCell.preferredHeight(for: viewModel, containerWidth: tableView.bounds.width)
+            return TwoLinesChartTableViewCell.preferredHeight(for: item, containerWidth: tableView.bounds.width)
         } else {
-            return LineChartTableViewCell.preferredHeight(for: viewModel, containerWidth: tableView.bounds.width)
+            return LineChartTableViewCell.preferredHeight(for: item, containerWidth: tableView.bounds.width)
         }
     }
     

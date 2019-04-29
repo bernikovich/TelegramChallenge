@@ -12,10 +12,23 @@ final class TwoLinesChartView: BaseChartView, ChartView {
         return false
     }
     
+    private static let leadingPlotLineLayersPool = ReusablePool(creationClosure: { () -> PlotLineLayer in
+        let layer = PlotLineLayer(value: 0, chartType: .twoLines)
+        layer.textLayer.alignmentMode = .left
+        layer.lineLayer.opacity = 0.5
+        return layer
+    })
     private var leadingPlotLineLayers: [PlotLineLayer] = []
+    private static let trailingPlotLineLayersPool = ReusablePool(creationClosure: { () -> PlotLineLayer in
+        let layer = PlotLineLayer(value: 0, chartType: .twoLines)
+        layer.textLayer.alignmentMode = .right
+        layer.lineLayer.opacity = 0.5
+        return layer
+    })
     private var trailingPlotLineLayers: [PlotLineLayer] = []
     
     private var columnPaths: [CGPath] = []
+    private var columnLinePaths: [Path] = []
     private var columnLayers: [ChartColumnLayer] = []
     
     private lazy var leadingPlotCalculator = PlotCalculator(
@@ -50,12 +63,19 @@ final class TwoLinesChartView: BaseChartView, ChartView {
         hideValueBox(animated: false)
         visibleColumns = []
         
-        leadingPlotLineLayers.forEach { $0.removeFromSuperlayer() }
+        leadingPlotLineLayers.forEach {
+            $0.removeFromSuperlayer()
+            type(of: self).leadingPlotLineLayersPool.enqueue($0)
+        }
         leadingPlotLineLayers = []
-        trailingPlotLineLayers.forEach { $0.removeFromSuperlayer() }
+        trailingPlotLineLayers.forEach {
+            $0.removeFromSuperlayer()
+            type(of: self).trailingPlotLineLayersPool.enqueue($0)
+        }
         trailingPlotLineLayers = []
         
         columnPaths = []
+        columnLinePaths = []
         columnLayers.forEach { $0.removeFromSuperlayer() }
         columnLayers = []
         
@@ -138,11 +158,11 @@ final class TwoLinesChartView: BaseChartView, ChartView {
         
         // All horizontal changes should be applied without animation.
         // But we should handle the case when animation is running already.
-        CATransaction.begin()
-        chart.columns.enumerated().forEach { index, line in
+
+        chart.columns.enumerated().forEach { index, column in
             let layer = columnLayers[index]
             let originalPath = columnPaths[index]
-            let supaPath = transformCalculator.pathForLine(line)
+            let supaPath = columnLinePaths[index]
             
             let isLeadingColumn = index == 0
             let oldPlot = isLeadingColumn ? oldLeadingPlot : oldTrailingPlot
@@ -150,7 +170,7 @@ final class TwoLinesChartView: BaseChartView, ChartView {
             
             // If layer is not visible and doesn't have hiding animation.
             var shouldStartNewAnimation = oldPlot != plot && animated
-            if !visibleColumns.contains(line) && layer.opacity == 0 && (layer.animationKeys()?.isEmpty ?? true) {
+            if !visibleColumns.contains(column) && layer.opacity == 0 && (layer.animationKeys()?.isEmpty ?? true) {
                 shouldStartNewAnimation = false
             }
             
@@ -173,51 +193,11 @@ final class TwoLinesChartView: BaseChartView, ChartView {
                 animation.startCallbackTimestamp = layerTime
                 animation.fromValue = updatedVisiblePath
                 animation.toValue = newPath
-                
-                // CAAnimation doesn't update presentation instantly.
-                // It mean that presentation layer can update
-                // properties with delay.
-                var shouldRemoveAnimation = false
-                if let runningAnimation = layer.runningAnimation, !shouldStartNewAnimation {
-                    // I tried here all (scheduled, startedTimestamp, beginTime,
-                    // converted to CALayer's time beginTime).
-                    // It looks like scheduled is the nearest value to
-                    // the onscreen presentation.
-                    let animationStarted = runningAnimation.scheduled
-                    let elapsedTime = layerTime - animationStarted
-                    var progress = elapsedTime / runningAnimation.duration
-                    progress = min(1, max(0, progress))
-                    
-                    // Interpolate possible real value based on
-                    // time animation start, it's duration and from/to values.
-                    let fromValue = runningAnimation.fromValue as! CGPath
-                    let toValue = runningAnimation.toValue as! CGPath
-                    let visiblePath = fromValue.transformingPolyline(to: toValue, with: CGFloat(progress)).fittedToWidth(1)
-                    let updatedVisiblePath = visiblePath.copy(using: &horizontalTransform)
-                    animation.fromValue = updatedVisiblePath
-                    
-                    // NOTE: Shit is here.
-                    // Old phones cannot animate path with large number
-                    // of points correctly. Presentation layer delays updates too much.
-                    let timeLeft = runningAnimation.duration - elapsedTime
-                    if line.values.count < 300 || !UIDevice.isOld {
-                        animation.duration = timeLeft
-                    }
-                    
-                    if timeLeft < 0 {
-                        shouldRemoveAnimation = true
-                    }
-                }
-                
-                // Animation is already finished.
+
                 CATransaction.performWithoutAnimation {
                     layer.path = newPath
                 }
-                if shouldRemoveAnimation {
-                    layer.removeAnimation(forKey: key)
-                } else {
-                    start(animation, on: layer)
-                }
+                start(animation, on: layer)
             } else {
                 layer.removeAnimation(forKey: key)
                 CATransaction.performWithoutAnimation {
@@ -225,7 +205,6 @@ final class TwoLinesChartView: BaseChartView, ChartView {
                 }
             }
         }
-        CATransaction.commit()
     }
     
     func redrawAll(animated: Bool) {
@@ -284,10 +263,12 @@ final class TwoLinesChartView: BaseChartView, ChartView {
             let verticalTransform = transformCalculator.transformForApplyingPlot(plot, to: path, boundsHeight: contentView.bounds.size.height)
             let horizontalTransform = transformCalculator.transformForApplyingRange(range, boundsWidth: contentView.bounds.size.width)
             var transform = verticalTransform.concatenating(horizontalTransform)
-            columnLayer.path = path.cgPath.copy(using: &transform)
+            let cgPath = path.cgPath
+            columnLayer.path = cgPath.copy(using: &transform)
             
             columnLayers.append(columnLayer)
-            columnPaths.append(path.cgPath)
+            columnPaths.append(cgPath)
+            columnLinePaths.append(path)
         }
     }
     
@@ -299,24 +280,18 @@ final class TwoLinesChartView: BaseChartView, ChartView {
         redrawVerticalPlot(
             plot: leadingPlot,
             oldPlot: oldLeadingPlot,
+            plotLineLayerPool: type(of: self).leadingPlotLineLayersPool,
             plotLineLayers: &leadingPlotLineLayers,
-            layerConfiguration: {
-                $0.textColor = UIColor(hexString: chart.columns[0].colorHex)
-                $0.textLayer.alignmentMode = .left
-                $0.lineLayer.opacity = 0.5
-        },
+            plotColor: UIColor(hexString: chart.columns[0].colorHex),
             animated: animated
         )
         
         redrawVerticalPlot(
             plot: trailingPlot,
             oldPlot: oldTrailingPlot,
+            plotLineLayerPool: type(of: self).trailingPlotLineLayersPool,
             plotLineLayers: &trailingPlotLineLayers,
-            layerConfiguration: {
-                $0.textColor = UIColor(hexString: chart.columns[1].colorHex)
-                $0.textLayer.alignmentMode = .right
-                $0.lineLayer.opacity = 0.5
-        },
+            plotColor: UIColor(hexString: chart.columns[1].colorHex),
             animated: animated
         )
     }
@@ -324,19 +299,23 @@ final class TwoLinesChartView: BaseChartView, ChartView {
     private func redrawVerticalPlot(
         plot: Plot,
         oldPlot: Plot?,
+        plotLineLayerPool: ReusablePool<PlotLineLayer>,
         plotLineLayers: inout [PlotLineLayer],
-        layerConfiguration: (PlotLineLayer) -> (),
+        plotColor: UIColor,
         animated: Bool) {
         
         if !animated {
             plotLineLayers.forEach {
                 $0.removeFromSuperlayer()
+                plotLineLayerPool.enqueue($0)
             }
             plotLineLayers.removeAll()
         }
+        
         let hiddenLayers = plotLineLayers.filter { $0.opacity == 0 }
         hiddenLayers.forEach {
             $0.removeFromSuperlayer()
+            plotLineLayerPool.enqueue($0)
         }
         plotLineLayers.removeAll { hiddenLayers.contains($0) }
         
@@ -347,11 +326,14 @@ final class TwoLinesChartView: BaseChartView, ChartView {
         
         let neededLineLayers = plotLineLayers.filter { plot.lineValues.contains($0.value) }
         let unneededLineLayers = plotLineLayers.filter { !plot.lineValues.contains($0.value) }
-        let newLineLayers: [PlotLineLayer] = missingValues.map {
-            let layer = PlotLineLayer(value: $0, chartType: .lines)
-            layerConfiguration(layer)
-            layer.opacity = 0
-            layer.zPosition = CGFloat($0)
+        let newLineLayers: [PlotLineLayer] = missingValues.map { value in
+            let layer = plotLineLayerPool.dequeue()
+            layer.textColor = plotColor
+            CATransaction.performWithoutAnimation {
+                layer.value = value
+                layer.opacity = 0
+                layer.zPosition = CGFloat(value)
+            }
             plotContainerView.layer.addSublayer(layer)
             return layer
         }
@@ -363,33 +345,31 @@ final class TwoLinesChartView: BaseChartView, ChartView {
         // TODO: Need to think about ChartView frame update too.
         let height = ceil(plotContainerView.bounds.height / CGFloat(plot.range.upperBound - plot.range.lowerBound) * CGFloat(plot.step))
         allLineLayers.forEach { layer in
-            let oldTransform = layer.transform
-            layer.transform = CATransform3DIdentity
-            layer.frame = CGRect(
-                x: 0,
-                y: plotContainerView.bounds.height - height,
-                width: plotContainerView.bounds.width,
-                height: height
-            )
-            layer.transform = oldTransform
+            CATransaction.performWithoutAnimation {
+                layer.bounds = CGRect(x: 0, y: 0, width: plotContainerView.bounds.width, height: height)
+                layer.position = CGPoint(x: layer.bounds.width / 2, y: plotContainerView.bounds.height - height / 2)
+            }
         }
         
         allLineLayers.forEach { linePlotLayer in
             let transformToValue = transformCalculator.transformForValueLine(value: linePlotLayer.value, plot: plot, boundsHeight: plotContainerView.bounds.height).transform3D
-            guard animated else {
-                linePlotLayer.opacity = 1
-                linePlotLayer.transform = transformToValue
-                return
-            }
             let isNew = newLineLayers.contains(linePlotLayer)
             let isUnneeded = unneededLineLayers.contains(linePlotLayer)
+            let opacityToValue: Float = isUnneeded ? 0 : 1
+            guard animated else {
+                CATransaction.performWithoutAnimation {
+                    linePlotLayer.opacity = opacityToValue
+                    linePlotLayer.transform = transformToValue
+                }
+                return
+            }
             
             var animations: [CAAnimation] = []
             
             let opacityAnimation = CAKeyframeAnimation(keyPath: "opacity")
             
             let opacityFromValue: Float = isNew ? 0.1 : (linePlotLayer.presentation() ?? linePlotLayer).opacity
-            let opacityToValue: Float = isUnneeded ? 0 : 1
+            
             let opacityMidValue: Float = isNew ? 0.4 : opacityToValue
             
             opacityAnimation.values = [opacityFromValue, opacityMidValue, opacityToValue]
@@ -447,6 +427,7 @@ private extension TwoLinesChartView {
         let index = Int(round((location.x / columnsContainerView.frame.width) * CGFloat(chart.legend.values.count - 1)))
         let indexRange = chart.legend.indexRange(for: range)
         let safeIndex = indexRange.clamp(index)
+        lastValueBoxIndex = safeIndex
         let x = gesture.location(in: parent).x
         
         weak var weakSelf = self
@@ -495,6 +476,8 @@ private extension TwoLinesChartView {
                 update(handler: oldHandler)
             } else {
                 let handler = ValueBoxViewTransitionsHandler(style: .normal)
+                handler.view.arrowLayer.isHidden = onSelectDetails == nil
+                addGestureRecognizersToValueBox(handler.view)
                 valueBoxHandler = handler
                 parent.addSubview(handler.view)
                 columnsContainerView.addSubview(handler.lineView)
@@ -523,4 +506,3 @@ extension TwoLinesChartView: AppearanceSupport {
         }
     }
 }
-

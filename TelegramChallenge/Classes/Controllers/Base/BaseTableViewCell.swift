@@ -19,12 +19,12 @@ class BaseTableViewCell: UITableViewCell, AppearanceSupport {
 
     override func setSelected(_ selected: Bool, animated: Bool) {
         super.setSelected(selected, animated: animated)
-        self.updateSelection(selected, animated: animated)
+        updateSelection(selected, animated: animated)
     }
 
     override func setHighlighted(_ highlighted: Bool, animated: Bool) {
         super.setHighlighted(highlighted, animated: animated)
-        self.updateSelection(highlighted, animated: animated)
+        updateSelection(highlighted, animated: animated)
     }
 
     func updateSelection(_ highlighted: Bool, animated: Bool) {
@@ -38,7 +38,7 @@ class BaseTableViewCell: UITableViewCell, AppearanceSupport {
     }
 
     func setup() {
-        self.subscribeToAppearanceUpdates()
+        subscribeToAppearanceUpdates()
     }
 
     func apply(theme: Theme) {

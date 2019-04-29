@@ -5,47 +5,101 @@
 
 import UIKit
 
+struct ChartInfo {
+    let mainChart: Chart
+    let detailsChartForDate: ((Date) -> Chart?)
+}
+
 final class ChartFetchService {
 
-    static func loadCharts(completion: @escaping ([Chart]) -> Void) {
+    static func loadCharts(completion: @escaping ([ChartInfo]) -> Void) {
         DispatchQueue.global(qos: .userInteractive).async {
-            let charts = ChartFetchService.loadCharts()
+            let chartInfoCollection = ChartFetchService.loadMainCharts()
             DispatchQueue.main.async {
-                completion(charts)
+                completion(chartInfoCollection)
             }
         }
     }
     
-    private static func loadCharts() -> [Chart] {
-        do {
-            let charts = try decodedCharts()
-            return charts.compactMap(Chart.init)
-        } catch {
-            return []
+    private static func loadMainCharts() -> [ChartInfo] {
+        let folders = ["1", "2", "3", "4", "5"]
+        
+        let monthDateFormatter = DateFormatter()
+        monthDateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        monthDateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        monthDateFormatter.dateFormat = "yyyy-MM"
+        
+        let dayDateFormatter = DateFormatter()
+        dayDateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        dayDateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dayDateFormatter.dateFormat = "dd"
+        
+        let detailsChartForDate: (Date, String) -> Chart? = { date, folder -> Chart? in
+            if folder == "5" {
+                guard let mainChartURL = Bundle.main.url(forResource: "Data/\(folder)/overview", withExtension: "json"),
+                    let codableChart = try? decodedChart(at: mainChartURL),
+                    let chart = Chart(chart: codableChart) else {
+                        return nil
+                }
+                    
+                guard let index = chart.legend.values.firstIndex(where: { $0 == date }) else {
+                    return nil
+                }
+                
+                let lowerBound = max(0, index - 3)
+                let upperBound = min(chart.legend.values.count - 1, index + 3)
+                guard lowerBound <= upperBound else {
+                    return nil
+                }
+                
+                let range = lowerBound...upperBound
+                let legendValues = chart.legend.values[range]
+                let legend = Legend(values: Array(legendValues))
+                let columns: [Column] = chart.columns.map {
+                    let values = Array($0.values[range])
+                    return Column(name: $0.name, style: $0.style, colorHex: $0.colorHex, values: values)
+                }
+                return Chart(
+                    legend: legend,
+                    columns: columns,
+                    isPercentage: chart.isPercentage,
+                    isStacked: chart.isStacked,
+                    isYScaled: chart.isYScaled
+                )
+            }
+            
+            let monthFolder = monthDateFormatter.string(from: date)
+            let file = dayDateFormatter.string(from: date)
+            
+            guard let chartURL = Bundle.main.url(forResource: "Data/\(folder)/\(monthFolder)/\(file)", withExtension: "json"),
+                let codableChart = try? decodedChart(at: chartURL),
+                let chart = Chart(chart: codableChart) else {
+                return nil
+            }
+            
+            return chart
         }
-    }
-    
-    private static func decodedCharts() throws -> [CodableChart] {
-        let chartsURLs = chartsResourceURLs()
-        var charts: [CodableChart] = []
-        try chartsURLs.forEach {
-            guard let chartURL = $0 else {
+        
+        var chartInfoCollection: [ChartInfo] = []
+        folders.forEach { folder in
+            guard let mainChartURL = Bundle.main.url(forResource: "Data/\(folder)/overview", withExtension: "json"),
+                let codableChart = try? decodedChart(at: mainChartURL),
+                let chart = Chart(chart: codableChart) else {
                 return
             }
             
-            let data = try Data(contentsOf: chartURL)
-            let decoder = JSONDecoder()
-            let chart = try decoder.decode(CodableChart.self, from: data)
-            charts.append(chart)
+            chartInfoCollection.append(ChartInfo(mainChart: chart, detailsChartForDate: { date -> Chart? in
+                return detailsChartForDate(date, folder)
+            }))
         }
-        
-        return charts
+
+        return chartInfoCollection
     }
     
-    private static func chartsResourceURLs() -> [URL?] {
-        let folders = ["1", "2", "3", "4", "5"]
-        let mainJson = "overview"
-        return folders.map { Bundle.main.url(forResource: "Data/\($0)/\(mainJson)", withExtension: "json") }
+    private static func decodedChart(at url: URL) throws -> CodableChart {
+        let data = try Data(contentsOf: url)
+        let decoder = JSONDecoder()
+        return try decoder.decode(CodableChart.self, from: data)
     }
     
 }

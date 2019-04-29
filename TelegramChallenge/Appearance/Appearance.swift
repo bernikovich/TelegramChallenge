@@ -46,7 +46,7 @@ extension AppearanceSupport {
 
 // Move me
 enum SharedConstants {
-    static let animationDuration: TimeInterval = 0.25
+    static let animationDuration: TimeInterval = 0.30
     static let timingFunction: CAMediaTimingFunction = CAMediaTimingFunction(name: .linear)
     
     // According to provided screenshots.

@@ -19,6 +19,7 @@ protocol Theme {
     var chartPlotLine: UIColor { get }
     var lineChartPlotText: UIColor { get }
     var chartBoxText: UIColor { get }
+    var chartTooltipArrow: UIColor { get }
     
     var barChartPlotXAxisText: UIColor { get }
     var barChartPlotYAxisText: UIColor { get }
@@ -41,6 +42,7 @@ struct DayTheme: Theme {
     let chartPlotLine = UIColor(hex: 0x182D3B).withAlphaComponent(0.1)
     let lineChartPlotText = UIColor(hex: 0x8E8E93)
     let chartBoxText = UIColor(hex: 0x69696E)
+    let chartTooltipArrow = UIColor(hex: 0x59606D).withAlphaComponent(0.3)
     
     let barChartPlotXAxisText = UIColor(hex: 0x252529).withAlphaComponent(0.5)
     let barChartPlotYAxisText = UIColor(hex: 0x252529).withAlphaComponent(0.5)
@@ -63,6 +65,7 @@ struct NightTheme: Theme {
     let chartPlotLine = UIColor(hex: 0x8596AB).withAlphaComponent(0.2)
     let lineChartPlotText = UIColor(hex: 0x8596AB)
     let chartBoxText = UIColor(hex: 0xFFFFFF)
+    let chartTooltipArrow = UIColor(hex: 0x59606D)
     
     let barChartPlotXAxisText = UIColor(hex: 0x8596AB)
     let barChartPlotYAxisText = UIColor(hex: 0xBACCE1).withAlphaComponent(0.6)

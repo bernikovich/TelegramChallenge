@@ -137,10 +137,9 @@ extension TransformCalculator {
         let verticalRange = minValue != maxValue ? Double(maxValue - minValue) : 1
         
         let points = column.values.enumerated().flatMap { index, value -> [CGPoint] in
-            let x1 = Double(index) * segmentWidth
-            let x2 = Double(index + 1) * segmentWidth
+            let x = Double(index) * segmentWidth
             let y = isVisible ? Double(coordinateSystemSize.height) * (1 - Double(value - minValue) / verticalRange) : 1
-            return [CGPoint(x: x1, y: y), CGPoint(x: x2, y: y)]
+            return [CGPoint(x: x, y: y), CGPoint(x: x + segmentWidth, y: y)]
         }
         
         return Path(points: points, values: column.values, minValue: minValue, maxValue: maxValue)

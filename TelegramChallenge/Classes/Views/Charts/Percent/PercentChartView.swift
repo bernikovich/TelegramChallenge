@@ -7,6 +7,7 @@ import UIKit
 
 final class PercentChartView: BaseChartView, ChartView {
     
+    private static let plotLineLayersPool = ReusablePool(creationClosure: { PlotLineLayer(value: 0, chartType: .percent) })
     private var plotLineLayers: [PlotLineLayer] = []
     
     private var columnPaths: [Path] = []
@@ -39,7 +40,10 @@ final class PercentChartView: BaseChartView, ChartView {
     func clear() {
         hideValueBox(animated: false)
         visibleColumns = []
-        plotLineLayers.forEach { $0.removeFromSuperlayer() }
+        plotLineLayers.forEach {
+            $0.removeFromSuperlayer()
+            type(of: self).plotLineLayersPool.enqueue($0)
+        }
         plotLineLayers = []
         columnLayers.forEach { $0.removeFromSuperlayer() }
         columnLayers = []
@@ -211,6 +215,9 @@ final class PercentChartView: BaseChartView, ChartView {
             $0.removeFromSuperlayer()
         }
         plotLineLayers.removeAll { hiddenLayers.contains($0) }
+        hiddenLayers.forEach {
+            type(of: self).plotLineLayersPool.enqueue($0)
+        }
         
         let oldLineValues = plotLineLayers.map { $0.value }
         let missingValues = plot.lineValues.filter {
@@ -219,10 +226,13 @@ final class PercentChartView: BaseChartView, ChartView {
         
         let neededLineLayers = plotLineLayers.filter { plot.lineValues.contains($0.value) }
         let unneededLineLayers = plotLineLayers.filter { !plot.lineValues.contains($0.value) }
-        let newLineLayers: [PlotLineLayer] = missingValues.map {
-            let layer = PlotLineLayer(value: $0, chartType: .bars)
-            layer.opacity = 0
-            layer.zPosition = CGFloat($0)
+        let newLineLayers: [PlotLineLayer] = missingValues.map { value in
+            let layer = type(of: self).plotLineLayersPool.dequeue()
+            CATransaction.performWithoutAnimation {
+                layer.value = value
+                layer.opacity = 0
+                layer.zPosition = CGFloat(value)
+            }
             plotContainerView.layer.addSublayer(layer)
             return layer
         }
@@ -234,33 +244,31 @@ final class PercentChartView: BaseChartView, ChartView {
         // TODO: Need to think about ChartView frame update too.
         let height = ceil(plotContainerView.bounds.height / CGFloat(plot.range.upperBound - plot.range.lowerBound) * CGFloat(plot.step))
         allLineLayers.forEach { layer in
-            let oldTransform = layer.transform
-            layer.transform = CATransform3DIdentity
-            layer.frame = CGRect(
-                x: 0.5, // https://www.raywenderlich.com/475829-core-graphics-tutorial-lines-rectangles-and-gradients
-                y: plotContainerView.bounds.height - height + 0.5,
-                width: plotContainerView.bounds.width,
-                height: height
-            )
-            layer.transform = oldTransform
+            CATransaction.performWithoutAnimation {
+                layer.bounds = CGRect(x: 0, y: 0, width: plotContainerView.bounds.width, height: height)
+                layer.position = CGPoint(x: layer.bounds.width / 2, y: plotContainerView.bounds.height - height / 2)
+            }
         }
         
         allLineLayers.forEach { linePlotLayer in
             let transformToValue = transformCalculator.transformForValueLine(value: linePlotLayer.value, plot: plot, boundsHeight: plotContainerView.bounds.height).transform3D
-            guard animated else {
-                linePlotLayer.opacity = 1
-                linePlotLayer.transform = transformToValue
-                return
-            }
             let isNew = newLineLayers.contains(linePlotLayer)
             let isUnneeded = unneededLineLayers.contains(linePlotLayer)
+            let opacityToValue: Float = isUnneeded ? 0 : 1
+            guard animated else {
+                CATransaction.performWithoutAnimation {
+                    linePlotLayer.opacity = opacityToValue
+                    linePlotLayer.transform = transformToValue
+                }
+                return
+            }
             
             var animations: [CAAnimation] = []
             
             let opacityAnimation = CAKeyframeAnimation(keyPath: "opacity")
             
             let opacityFromValue: Float = isNew ? 0.1 : (linePlotLayer.presentation() ?? linePlotLayer).opacity
-            let opacityToValue: Float = isUnneeded ? 0 : 1
+            
             let opacityMidValue: Float = isNew ? 0.4 : opacityToValue
             
             opacityAnimation.values = [opacityFromValue, opacityMidValue, opacityToValue]
@@ -318,6 +326,7 @@ private extension PercentChartView {
         let index = Int(round((location.x / columnsContainerView.frame.width) * CGFloat(chart.legend.values.count - 1)))
         let indexRange = chart.legend.indexRange(for: range)
         let safeIndex = indexRange.clamp(index)
+        lastValueBoxIndex = safeIndex
         let x = gesture.location(in: parent).x
         
         weak var weakSelf = self
@@ -356,6 +365,8 @@ private extension PercentChartView {
                 update(handler: oldHandler)
             } else {
                 let handler = ValueBoxViewTransitionsHandler(style: .percent)
+                handler.view.arrowLayer.isHidden = onSelectDetails == nil
+                addGestureRecognizersToValueBox(handler.view)
                 valueBoxHandler = handler
                 parent.addSubview(handler.view)
                 columnsContainerView.addSubview(handler.lineView)

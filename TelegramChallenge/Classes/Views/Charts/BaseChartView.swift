@@ -6,6 +6,9 @@
 import UIKit
 
 protocol ChartView: UIView, AppearanceSupport {
+    var onSelectDetails: ((Int) -> ())? { get set }
+    var contentView: UIView { get }
+    
     func setupWithChart(_: Chart, in: ClosedRange<CGFloat>, animated: Bool)
     
     func setupVisibleColumns(_: [Column], animated: Bool)
@@ -21,6 +24,9 @@ class BaseChartView: BaseView {
     var visibleColumns: [Column] = []
     var range: ClosedRange<CGFloat> = 0...1
     var lastKnownSize: CGSize = .zero
+    
+    var onSelectDetails: ((Int) -> ())?
+    var lastValueBoxIndex: Int?
     
     let gesturesView = UIView()
     
@@ -95,6 +101,20 @@ class BaseChartView: BaseView {
     
     @objc func handlePan(_ gesture: UIPanGestureRecognizer) {
         
+    }
+    
+    func addGestureRecognizersToValueBox(_ view: ValueBoxView) {
+        if onSelectDetails != nil {
+            let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapOnValueBox(_:)))
+            tapGesture.numberOfTouchesRequired = 1
+            view.addGestureRecognizer(tapGesture)
+        }
+    }
+    
+    @objc func handleTapOnValueBox(_ gesture: UITapGestureRecognizer) {
+        if let index = lastValueBoxIndex {
+            onSelectDetails?(index)
+        }
     }
 
 }

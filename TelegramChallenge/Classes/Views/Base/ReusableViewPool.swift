@@ -5,15 +5,21 @@
 
 import UIKit
 
-final class ReusableViewPool<T: UIView> {
+final class ReusablePool<T> {
 
-    init(initialPool: [T] = []) {
-        availablePool = initialPool
+    private let creationClosure: () -> T
+    private var availablePool: [T] = []
+    
+    init(creationClosure: @escaping () -> T, initialSize: Int = 5) {
+        self.creationClosure = creationClosure
+        for _ in 0..<initialSize {
+            enqueue(creationClosure())
+        }
     }
 
     func dequeue() -> T {
         guard !availablePool.isEmpty else {
-            return T()
+            return creationClosure()
         }
 
         return availablePool.removeLast()
@@ -22,7 +28,5 @@ final class ReusableViewPool<T: UIView> {
     func enqueue(_ element: T) {
         availablePool.append(element)
     }
-
-    private var availablePool: [T] = []
 
 }

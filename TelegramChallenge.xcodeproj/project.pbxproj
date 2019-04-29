@@ -16,11 +16,16 @@
 		2F50BFC322381A8600FF3040 /* TrimRangeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F50BFC222381A8600FF3040 /* TrimRangeView.swift */; };
 		2F50BFC522381D3600FF3040 /* BaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F50BFC422381D3600FF3040 /* BaseView.swift */; };
 		2FC9683F223BE8E400839404 /* LegendView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FC9683E223BE8E400839404 /* LegendView.swift */; };
-		2FD8D0A62237A5BD004F6B6C /* ChartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FD8D0A52237A5BD004F6B6C /* ChartViewModel.swift */; };
+		2FD8D0A62237A5BD004F6B6C /* ChartControlsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FD8D0A52237A5BD004F6B6C /* ChartControlsViewModel.swift */; };
 		2FDCCDB92242D56400B69920 /* ValueBoxLineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FDCCDB82242D56400B69920 /* ValueBoxLineView.swift */; };
 		96EB72BB225753BF008C2360 /* GradientView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96EB72BA225753BF008C2360 /* GradientView.swift */; };
 		B01D39A4224178A800B5E8BF /* TransformCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01D39A3224178A800B5E8BF /* TransformCalculator.swift */; };
 		B01D4AF822638A8300C7AA93 /* CoreAnimationExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01D4AF722638A8300C7AA93 /* CoreAnimationExtensions.swift */; };
+		B01D4AFB2263DCCB00C7AA93 /* ChartControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01D4AFA2263DCCB00C7AA93 /* ChartControlsView.swift */; };
+		B01D4AFE2264901900C7AA93 /* PieChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01D4AFD2264901900C7AA93 /* PieChartView.swift */; };
+		B01D4B002264947300C7AA93 /* InnerPieChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01D4AFF2264947300C7AA93 /* InnerPieChartView.swift */; };
+		B01D4B022264F5DE00C7AA93 /* ChartTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01D4B012264F5DE00C7AA93 /* ChartTypes.swift */; };
+		B01D4B042265077300C7AA93 /* PercentCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01D4B032265077300C7AA93 /* PercentCalculator.swift */; };
 		B04D49B32262838B00FBBFB1 /* ValueBoxViewPositionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B04D49B22262838B00FBBFB1 /* ValueBoxViewPositionHandler.swift */; };
 		B05548A6223A62100078E989 /* PlotCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B05548A5223A62100078E989 /* PlotCalculator.swift */; };
 		B06795712244F17E008461F6 /* CoreGraphics.swift in Sources */ = {isa = PBXBuildFile; fileRef = B06795702244F17E008461F6 /* CoreGraphics.swift */; };
@@ -70,11 +75,16 @@
 		2F50BFC222381A8600FF3040 /* TrimRangeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrimRangeView.swift; sourceTree = "<group>"; };
 		2F50BFC422381D3600FF3040 /* BaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseView.swift; sourceTree = "<group>"; };
 		2FC9683E223BE8E400839404 /* LegendView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegendView.swift; sourceTree = "<group>"; };
-		2FD8D0A52237A5BD004F6B6C /* ChartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartViewModel.swift; sourceTree = "<group>"; };
+		2FD8D0A52237A5BD004F6B6C /* ChartControlsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartControlsViewModel.swift; sourceTree = "<group>"; };
 		2FDCCDB82242D56400B69920 /* ValueBoxLineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueBoxLineView.swift; sourceTree = "<group>"; };
 		96EB72BA225753BF008C2360 /* GradientView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientView.swift; sourceTree = "<group>"; };
 		B01D39A3224178A800B5E8BF /* TransformCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformCalculator.swift; sourceTree = "<group>"; };
 		B01D4AF722638A8300C7AA93 /* CoreAnimationExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreAnimationExtensions.swift; sourceTree = "<group>"; };
+		B01D4AFA2263DCCB00C7AA93 /* ChartControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartControlsView.swift; sourceTree = "<group>"; };
+		B01D4AFD2264901900C7AA93 /* PieChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PieChartView.swift; sourceTree = "<group>"; };
+		B01D4AFF2264947300C7AA93 /* InnerPieChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InnerPieChartView.swift; sourceTree = "<group>"; };
+		B01D4B012264F5DE00C7AA93 /* ChartTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartTypes.swift; sourceTree = "<group>"; };
+		B01D4B032265077300C7AA93 /* PercentCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PercentCalculator.swift; sourceTree = "<group>"; };
 		B04D49B22262838B00FBBFB1 /* ValueBoxViewPositionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueBoxViewPositionHandler.swift; sourceTree = "<group>"; };
 		B05548A5223A62100078E989 /* PlotCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlotCalculator.swift; sourceTree = "<group>"; };
 		B06795702244F17E008461F6 /* CoreGraphics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreGraphics.swift; sourceTree = "<group>"; };
@@ -152,14 +162,6 @@
 			path = Legend;
 			sourceTree = "<group>";
 		};
-		2FD8D0A42237A5AD004F6B6C /* ViewModel */ = {
-			isa = PBXGroup;
-			children = (
-				2FD8D0A52237A5BD004F6B6C /* ChartViewModel.swift */,
-			);
-			path = ViewModel;
-			sourceTree = "<group>";
-		};
 		2FDCCDB32242BF9300B69920 /* ValueBox */ = {
 			isa = PBXGroup;
 			children = (
@@ -185,8 +187,28 @@
 			children = (
 				B05548A5223A62100078E989 /* PlotCalculator.swift */,
 				B01D39A3224178A800B5E8BF /* TransformCalculator.swift */,
+				B01D4B032265077300C7AA93 /* PercentCalculator.swift */,
 			);
 			path = Math;
+			sourceTree = "<group>";
+		};
+		B01D4AF92263DC9F00C7AA93 /* ChartControls */ = {
+			isa = PBXGroup;
+			children = (
+				B01D4AFA2263DCCB00C7AA93 /* ChartControlsView.swift */,
+				2FD8D0A52237A5BD004F6B6C /* ChartControlsViewModel.swift */,
+				B01D4B012264F5DE00C7AA93 /* ChartTypes.swift */,
+			);
+			path = ChartControls;
+			sourceTree = "<group>";
+		};
+		B01D4AFC2264900800C7AA93 /* Pie */ = {
+			isa = PBXGroup;
+			children = (
+				B01D4AFD2264901900C7AA93 /* PieChartView.swift */,
+				B01D4AFF2264947300C7AA93 /* InnerPieChartView.swift */,
+			);
+			path = Pie;
 			sourceTree = "<group>";
 		};
 		B080F7F4226123FF00AB9B42 /* Chart */ = {
@@ -256,6 +278,7 @@
 			isa = PBXGroup;
 			children = (
 				B0E04971225BAF7E0053FAAB /* Base */,
+				B01D4AF92263DC9F00C7AA93 /* ChartControls */,
 				B0F008672237F0FF00E2CD74 /* Charts */,
 				B0E04966225A91060053FAAB /* FilterSwitch */,
 				96EB72B9225753B8008C2360 /* GradientView */,
@@ -273,6 +296,7 @@
 				B0E04970225BAF6B0053FAAB /* Bar */,
 				B0E0496F225BAEEF0053FAAB /* Line */,
 				B080F7FF2261376100AB9B42 /* Percent */,
+				B01D4AFC2264900800C7AA93 /* Pie */,
 				B080F806226252C400AB9B42 /* TwoLines */,
 				B080F7FB2261283A00AB9B42 /* BaseChartView.swift */,
 				B0F008682237F11D00E2CD74 /* PlotLineLayer.swift */,
@@ -402,7 +426,6 @@
 		B0F037E5223682490085ACE6 /* Chart */ = {
 			isa = PBXGroup;
 			children = (
-				2FD8D0A42237A5AD004F6B6C /* ViewModel */,
 				B0F037E82236826C0085ACE6 /* Views */,
 				B0F037E6223682550085ACE6 /* StatisticsViewController.swift */,
 			);
@@ -502,7 +525,7 @@
 				B0F037C322366B1C0085ACE6 /* NavigationViewController.swift in Sources */,
 				B080F7EC225FF92700AB9B42 /* ValueBoxView.swift in Sources */,
 				2F128C592236DA7C00749EA1 /* BaseTableViewCell.swift in Sources */,
-				2FD8D0A62237A5BD004F6B6C /* ChartViewModel.swift in Sources */,
+				2FD8D0A62237A5BD004F6B6C /* ChartControlsViewModel.swift in Sources */,
 				B080F80322613B2A00AB9B42 /* PercentChartTableViewCell.swift in Sources */,
 				B06795712244F17E008461F6 /* CoreGraphics.swift in Sources */,
 				B0F037E42236821F0085ACE6 /* UITableViewExtensions.swift in Sources */,
@@ -512,20 +535,25 @@
 				B05548A6223A62100078E989 /* PlotCalculator.swift in Sources */,
 				B0F037E7223682550085ACE6 /* StatisticsViewController.swift in Sources */,
 				B080F7EF226001F000AB9B42 /* ValueBoxTitleValueView.swift in Sources */,
+				B01D4AFE2264901900C7AA93 /* PieChartView.swift in Sources */,
 				2F14B4BD224372BA006E7F31 /* HeaderView.swift in Sources */,
 				B0F037E222367C5A0085ACE6 /* Chart.swift in Sources */,
 				B080F7F9226126F700AB9B42 /* BaseChartTableViewCell.swift in Sources */,
+				B01D4B042265077300C7AA93 /* PercentCalculator.swift in Sources */,
 				B0F037E022367C1B0085ACE6 /* ChartFetchService.swift in Sources */,
 				2F50BFC522381D3600FF3040 /* BaseView.swift in Sources */,
 				B01D39A4224178A800B5E8BF /* TransformCalculator.swift in Sources */,
 				B0E04973225BAFA70053FAAB /* BarChartView.swift in Sources */,
+				B01D4B022264F5DE00C7AA93 /* ChartTypes.swift in Sources */,
 				B080F8052262518F00AB9B42 /* TwoLinesChartTableViewCell.swift in Sources */,
 				B04D49B32262838B00FBBFB1 /* ValueBoxViewPositionHandler.swift in Sources */,
 				B0F037C622366B6D0085ACE6 /* Theme.swift in Sources */,
 				96EB72BB225753BF008C2360 /* GradientView.swift in Sources */,
+				B01D4B002264947300C7AA93 /* InnerPieChartView.swift in Sources */,
 				B080F7FA226126F700AB9B42 /* BarChartTableViewCell.swift in Sources */,
 				B080F8012261377500AB9B42 /* PercentChartView.swift in Sources */,
 				2F39537B22397C8600AD3673 /* RangeExtensions.swift in Sources */,
+				B01D4AFB2263DCCB00C7AA93 /* ChartControlsView.swift in Sources */,
 				B080F7FE2261333300AB9B42 /* SingleBarChartTableViewCell.swift in Sources */,
 				2F50BFC122381A2600FF3040 /* TrimmerView.swift in Sources */,
 				B080F7FC2261283A00AB9B42 /* BaseChartView.swift in Sources */,

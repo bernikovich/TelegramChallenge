@@ -22,7 +22,11 @@ class FilterSwitch: BaseView {
     private let innerButton = UIButton(type: .custom)
     
     private let checkmarkLayer = CAShapeLayer.makeCheckmark()
-    private let label = UILabel()
+    private let label: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.systemFont(ofSize: 13, weight: .medium)
+        return label
+    }()
     
     private(set) var isSelected: Bool = true
     private var item: Item?
@@ -81,8 +85,9 @@ class FilterSwitch: BaseView {
     }
     
     func updateState(_ isSelected: Bool, animated: Bool) {
+        let isUpdated = self.isSelected != isSelected
         self.isSelected = isSelected
-        updateState(animated: animated)
+        updateState(animated: (isUpdated && animated))
     }
     
     static func preferredSize(for item: Item) -> CGSize {
@@ -108,12 +113,20 @@ class FilterSwitch: BaseView {
     private func updateState(animated: Bool) {
         if animated {
             CATransaction.begin()
-            CATransaction.setAnimationDuration(0.25)
+            CATransaction.setAnimationDuration(SharedConstants.animationDuration)
             CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeInEaseOut))
-            UIView.animate(withDuration: 0.25) {
+            UIView.animate(withDuration: SharedConstants.animationDuration) {
                 self.updateState()
             }
             CATransaction.commit()
+            
+            let animation = CAKeyframeAnimation(keyPath: "transform")
+            animation.duration = SharedConstants.animationDuration
+            animation.values = [CGAffineTransform.identity, CGAffineTransform(scaleX: 0.9, y: 0.9), CGAffineTransform.identity].map {
+                $0.transform3D
+            }
+            animation.keyTimes = [0, 0.5, 1]
+            layer.add(animation, forKey: "transformAnimation")
         } else {
             updateState()
         }

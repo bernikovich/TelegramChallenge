@@ -7,6 +7,7 @@ import UIKit
 
 final class LineChartView: BaseChartView, ChartView {
     
+    private static let plotLineLayersPool = ReusablePool(creationClosure: { PlotLineLayer(value: 0, chartType: .lines) })
     private var plotLineLayers: [PlotLineLayer] = []
     
     private var columnPaths: [CGPath] = []
@@ -36,7 +37,10 @@ final class LineChartView: BaseChartView, ChartView {
     func clear() {
         hideValueBox(animated: false)
         visibleColumns = []
-        plotLineLayers.forEach { $0.removeFromSuperlayer() }
+        plotLineLayers.forEach {
+            $0.removeFromSuperlayer()
+            type(of: self).plotLineLayersPool.enqueue($0)
+        }
         plotLineLayers = []
         columnLayers.forEach { $0.removeFromSuperlayer() }
         columnLayers = []
@@ -50,9 +54,15 @@ final class LineChartView: BaseChartView, ChartView {
         self.chart = chart
         self.visibleColumns = chart.columns
         self.range = range
-        plotCalculator.updatePreloadedPlots(columns: visibleColumns)
         
+        let helper = DebugHelper()
+        plotCalculator.updatePreloadedPlots(columns: visibleColumns)
+        helper.append()
         redrawAll(animated: animated)
+        helper.append()
+        if helper.longest > 0.05 {
+            print(":(")
+        }
     }
     
     func setupVisibleColumns(_ visibleColumns: [Column], animated: Bool = true) {
@@ -146,20 +156,13 @@ final class LineChartView: BaseChartView, ChartView {
         var t9: TimeInterval = 0
         var t10: TimeInterval = 0
         var t11: TimeInterval = 0
-        var t11b: TimeInterval = 0
         var t12: TimeInterval = 0
         var t13: TimeInterval = 0
-        var t14: TimeInterval = 0
-        var t15: TimeInterval = 0
-        var t16: TimeInterval = 0
-        var t17: TimeInterval = 0
-        var t18: TimeInterval = 0
         
         helper.append()
         
         // All horizontal changes should be applied without animation.
         // But we should handle the case when animation is running already.
-        CATransaction.begin()
         chart.columns.enumerated().forEach { index, column in
             let inner0 = CACurrentMediaTime()
             
@@ -201,13 +204,7 @@ final class LineChartView: BaseChartView, ChartView {
             var inner9: TimeInterval = inner7
             var inner10: TimeInterval = inner7
             var inner11: TimeInterval = inner7
-            var inner11b: TimeInterval = inner7
             var inner12: TimeInterval = inner7
-            var inner13: TimeInterval = inner7
-            var inner14: TimeInterval = inner7
-            var inner15: TimeInterval = inner7
-            var inner16: TimeInterval = inner7
-            var inner17: TimeInterval = inner7
             
             // Check if there is currently runnning animation.
             let oldAnimation = layer.animation(forKey: key) as? ChartAnimation
@@ -227,67 +224,16 @@ final class LineChartView: BaseChartView, ChartView {
                 
                 inner10 = CACurrentMediaTime()
                 
-
-                
-//                // CAAnimation doesn't update presentation instantly.
-//                // It mean that presentation layer can update
-//                // properties with delay.
-//                var shouldRemoveAnimation = false
-//                if let runningAnimation = layer.runningAnimation, !shouldStartNewAnimation {
-//                    // I tried here all (scheduled, startedTimestamp, beginTime,
-//                    // converted to CALayer's time beginTime).
-//                    // It looks like scheduled is the nearest value to
-//                    // the onscreen presentation.
-//                    let animationStarted = runningAnimation.scheduled
-//                    let elapsedTime = layerTime - animationStarted
-//                    var progress = elapsedTime / runningAnimation.duration
-//                    progress = min(1, max(0, progress))
-//
-//                    inner11 = CACurrentMediaTime()
-//
-//                    // Interpolate possible real value based on
-//                    // time animation start, it's duration and from/to values.
-//                    let fromValue = runningAnimation.fromValue as! CGPath
-//                    inner11b = CACurrentMediaTime()
-//                    let toValue = runningAnimation.toValue as! CGPath
-//
-//                    inner12 = CACurrentMediaTime()
-//                    let visiblePath = fromValue.transformingPolyline(to: toValue, with: CGFloat(progress)).fittedToWidth(1)
-//
-//                    inner13 = CACurrentMediaTime()
-//                    let updatedVisiblePath = visiblePath.copy(using: &horizontalTransform)
-//                    animation.fromValue = updatedVisiblePath
-//
-//                    // NOTE: Shit is here.
-//                    // Old phones cannot animate path with large number
-//                    // of points correctly. Presentation layer delays updates too much.
-//                    let timeLeft = runningAnimation.duration - elapsedTime
-//                    if column.values.count < 300 || !UIDevice.isOld {
-//                        animation.duration = timeLeft
-//                    }
-//
-//                    inner14 = CACurrentMediaTime()
-//
-//                    if timeLeft < 0 {
-//                        shouldRemoveAnimation = true
-//                    }
-//
-//                    inner15 = CACurrentMediaTime()
-//                }
-                
                 // Animation is already finished.
                 CATransaction.performWithoutAnimation {
                     layer.path = newPath
                 }
                 
-                inner16 = CACurrentMediaTime()
-                if shouldRemoveAnimation {
-                    layer.removeAnimation(forKey: key)
-                } else {
-                    start(animation, on: layer)
-                }
+                inner11 = CACurrentMediaTime()
+    
+                start(animation, on: layer)
                 
-                inner17 = CACurrentMediaTime()
+                inner12 = CACurrentMediaTime()
             } else {
                 layer.removeAnimation(forKey: key)
                 CATransaction.performWithoutAnimation {
@@ -295,8 +241,7 @@ final class LineChartView: BaseChartView, ChartView {
                 }
             }
             
-            let inner18 = CACurrentMediaTime()
-            
+            let inner13 = CACurrentMediaTime()
             
             t1 += inner1 - inner0
             t2 += inner2 - inner1
@@ -309,18 +254,11 @@ final class LineChartView: BaseChartView, ChartView {
             t9 += inner9 - inner8
             t10 += inner10 - inner9
             t11 += inner11 - inner10
-            t11b += inner11b - inner11
-            t12 += inner12 - inner11b
+            t12 += inner12 - inner11
             t13 += inner13 - inner12
-            t14 += inner14 - inner13
-            t15 += inner15 - inner14
-            t16 += inner16 - inner15
-            t17 += inner17 - inner16
-            t18 += inner18 - inner17
             
         }
-        CATransaction.commit()
-        var t = [t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t11b, t12, t13, t14, t15, t16, t17, t18]
+        var t = [t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t11, t12, t13]
         helper.append()
         if helper.longest > 0.01 {
             print("NOOO2")
@@ -393,6 +331,7 @@ final class LineChartView: BaseChartView, ChartView {
         if !animated {
             plotLineLayers.forEach {
                 $0.removeFromSuperlayer()
+                type(of: self).plotLineLayersPool.enqueue($0)
             }
             plotLineLayers.removeAll()
         }
@@ -404,6 +343,9 @@ final class LineChartView: BaseChartView, ChartView {
             $0.removeFromSuperlayer()
         }
         plotLineLayers.removeAll { hiddenLayers.contains($0) }
+        hiddenLayers.forEach {
+            type(of: self).plotLineLayersPool.enqueue($0)
+        }
         
         helper.append()
         
@@ -419,10 +361,17 @@ final class LineChartView: BaseChartView, ChartView {
         
         helper.append()
         
-        let newLineLayers: [PlotLineLayer] = missingValues.map {
-            let layer = PlotLineLayer(value: $0, chartType: .lines)
-            layer.opacity = 0
-            layer.zPosition = CGFloat($0)
+        var t1: TimeInterval = 0
+        var t2: TimeInterval = 0
+        var t3: TimeInterval = 0
+        
+        let newLineLayers: [PlotLineLayer] = missingValues.map { value in
+            let layer = type(of: self).plotLineLayersPool.dequeue()
+            CATransaction.performWithoutAnimation {
+                layer.value = value
+                layer.opacity = 0
+                layer.zPosition = CGFloat(value)
+            }
             plotContainerView.layer.addSublayer(layer)
             return layer
         }
@@ -436,36 +385,45 @@ final class LineChartView: BaseChartView, ChartView {
         // TODO: Need to think about ChartView frame update too.
         let height = ceil(plotContainerView.bounds.height / CGFloat(plot.range.upperBound - plot.range.lowerBound) * CGFloat(plot.step))
         allLineLayers.forEach { layer in
-            let oldTransform = layer.transform
-            layer.transform = CATransform3DIdentity
-            layer.frame = CGRect(
-                x: 0,
-                y: plotContainerView.bounds.height - height,
-                width: plotContainerView.bounds.width,
-                height: height
-            )
-            layer.transform = oldTransform
+            CATransaction.performWithoutAnimation {
+                layer.bounds = CGRect(x: 0, y: 0, width: plotContainerView.bounds.width, height: height)
+                layer.position = CGPoint(x: layer.bounds.width / 2, y: plotContainerView.bounds.height - height / 2)
+            }
         }
         
         helper.append()
         
+        var t4: TimeInterval = 0
+        var t5: TimeInterval = 0
+        var t6: TimeInterval = 0
+        var t7: TimeInterval = 0
+        var t8: TimeInterval = 0
+        var t9: TimeInterval = 0
+        
         allLineLayers.forEach { linePlotLayer in
+            let inner0 = CACurrentMediaTime()
             let transformToValue = transformCalculator.transformForValueLine(value: linePlotLayer.value, plot: plot, boundsHeight: plotContainerView.bounds.height).transform3D
-            guard animated else {
-                linePlotLayer.opacity = 1
-                linePlotLayer.transform = transformToValue
-                return
-            }
             let isNew = newLineLayers.contains(linePlotLayer)
             let isUnneeded = unneededLineLayers.contains(linePlotLayer)
+            let opacityToValue: Float = isUnneeded ? 0 : 1
+            guard animated else {
+                CATransaction.performWithoutAnimation {
+                    linePlotLayer.opacity = opacityToValue
+                    linePlotLayer.transform = transformToValue
+                }
+                return
+            }
+            
+            let inner4 = CACurrentMediaTime()
             
             var animations: [CAAnimation] = []
             
             let opacityAnimation = CAKeyframeAnimation(keyPath: "opacity")
             
             let opacityFromValue: Float = isNew ? 0.1 : (linePlotLayer.presentation() ?? linePlotLayer).opacity
-            let opacityToValue: Float = isUnneeded ? 0 : 1
             let opacityMidValue: Float = isNew ? 0.4 : opacityToValue
+            
+            let inner5 = CACurrentMediaTime()
             
             opacityAnimation.values = [opacityFromValue, opacityMidValue, opacityToValue]
             opacityAnimation.keyTimes = [0, 0.5, 1]
@@ -478,20 +436,35 @@ final class LineChartView: BaseChartView, ChartView {
             transformAnimation.keyTimes = [0, 1]
             animations.append(transformAnimation)
             
+            let inner6 = CACurrentMediaTime()
+            
             CATransaction.performWithoutAnimation {
                 linePlotLayer.opacity = opacityToValue
                 linePlotLayer.transform = transformToValue
             }
+            
+            let inner7 = CACurrentMediaTime()
             
             let animation = CAAnimationGroup()
             animation.animations = animations
             animation.duration = SharedConstants.animationDuration
             animation.timingFunction = SharedConstants.timingFunction
             linePlotLayer.add(animation, forKey: "appearanceAnimation")
+            
+            let inner8 = CACurrentMediaTime()
+            
+            t4 += inner4 - inner0
+            t5 += inner5 - inner4
+            t6 += inner6 - inner5
+            t7 += inner7 - inner6
+            t8 += inner8 - inner7
         }
         
+        let t01 = [t1, t2, t3]
+        let t02 = [t4, t5, t6, t7, t8]
+        
         helper.append()
-        if helper.longest > 0.01 {
+        if helper.longest > 0.006 {
             print("V-PLOT")
         }
     }
@@ -527,6 +500,7 @@ private extension LineChartView {
         let index = Int(round((location.x / columnsContainerView.frame.width) * CGFloat(chart.legend.values.count - 1)))
         let indexRange = chart.legend.indexRange(for: range)
         let safeIndex = indexRange.clamp(index)
+        lastValueBoxIndex = safeIndex
         let x = gesture.location(in: parent).x
 
         weak var weakSelf = self
@@ -568,6 +542,8 @@ private extension LineChartView {
                 update(handler: oldHandler)
             } else {
                 let handler = ValueBoxViewTransitionsHandler(style: .normal)
+                handler.view.arrowLayer.isHidden = onSelectDetails == nil
+                addGestureRecognizersToValueBox(handler.view)
                 valueBoxHandler = handler
                 parent.addSubview(handler.view)
                 columnsContainerView.addSubview(handler.lineView)

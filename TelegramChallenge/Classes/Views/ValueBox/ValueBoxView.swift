@@ -25,6 +25,7 @@ final class ValueBoxView: BaseView {
     private var titleValueViews: [ValueBoxTitleValueView] = []
     
     private let backgroundView = UIView()
+    let arrowLayer = CAShapeLayer.makeArrow()
     
     init(style: Style) {
         self.style = style
@@ -44,6 +45,8 @@ final class ValueBoxView: BaseView {
         
         backgroundView.layer.cornerRadius = 6
         backgroundView.clipsToBounds = true
+        
+        backgroundView.layer.addSublayer(arrowLayer)
     }
     
     func update(date: Date, columns: [Column], index: Int) {
@@ -74,9 +77,9 @@ final class ValueBoxView: BaseView {
         let sum = columns.reduce(Int64(0), { $0 + $1.values[index] })
         var columnPercentsFloat: [Int: Double] = [:]
         columns.enumerated().forEach { columnIndex, column in
-            columnPercentsFloat[columnIndex] = Double(column.values[index]) * 100 / Double(sum)
+            columnPercentsFloat[columnIndex] = sum > 0 ? Double(column.values[index]) * 100 / Double(sum) : 0
         }
-        let normalizedColumnPercents = normalizePercents(columnPercentsFloat)
+        let normalizedColumnPercents = PercentCalculator.normalizePercents(columnPercentsFloat)
         
         sources.forEach { source in
             let view: ValueBoxTitleValueView
@@ -142,52 +145,18 @@ final class ValueBoxView: BaseView {
         bounds = CGRect(
             x: 0,
             y: 0,
-            width: max(valuesContainer.frame.maxX + horizontalInset, 140),
+            width: max(valuesContainer.frame.maxX + horizontalInset, 148),
             height: valuesContainer.frame.maxY + 8
         )
         backgroundView.frame = bounds
         valuesContainer.frame.size = CGSize(width: backgroundView.frame.width - 2 * horizontalInset, height: valuesContainer.frame.height)
-    }
-    
-    // Can be shared.
-    private func normalizePercents(_ percents: [Int: Double]) -> [Int: Int] {
-        guard !percents.isEmpty else {
-            return [:]
-        }
         
-        let targetPercent = 100
-        let currentSum = percents.values.reduce(Int(0), { $0 + Int($1) })
-        let reminders = percents.mapValues { $0 - Double(Int($0)) }
-        
-        let defaultIndexForChanges = 0
-        
-        if currentSum == targetPercent {
-            return percents.mapValues { Int($0) }
-        } else if currentSum < targetPercent {
-            // Increase value with biggest reminder.
-            if let maxReminder = reminders.values.max(),
-                let targetIndex = reminders.first(where: { $0.value == maxReminder })?.key {
-                var newPercents = percents
-                newPercents[targetIndex] = Double(Int64(percents[targetIndex] ?? 0) + 1)
-                return normalizePercents(newPercents)
-            } else {
-                var newPercents = percents
-                newPercents[defaultIndexForChanges] = Double(Int64(percents[defaultIndexForChanges] ?? 0) + 1)
-                return normalizePercents(newPercents)
-            }
-        } else {
-            // Reduce value with smallest reminder.
-            if let minReminder = reminders.values.min(),
-                let targetIndex = reminders.first(where: { $0.value == minReminder })?.key {
-                var newPercents = percents
-                newPercents[targetIndex] = Double(Int64(percents[targetIndex] ?? 0) - 1)
-                return normalizePercents(newPercents)
-            } else {
-                var newPercents = percents
-                newPercents[defaultIndexForChanges] = Double(Int64(percents[defaultIndexForChanges] ?? 0) - 1)
-                return normalizePercents(newPercents)
-            }
-        }
+        arrowLayer.frame = CGRect(
+            x: valuesContainer.frame.maxX - arrowLayer.frame.width,
+            y: titleLabel.frame.midY - arrowLayer.frame.height / 2,
+            width: arrowLayer.frame.width,
+            height: arrowLayer.frame.height
+        )
     }
     
 }
@@ -196,6 +165,7 @@ extension ValueBoxView: AppearanceSupport {
     func apply(theme: Theme) {
         titleLabel.textColor = Appearance.theme.chartBoxText
         backgroundView.backgroundColor = theme.background
+        arrowLayer.strokeColor = theme.chartTooltipArrow.cgColor
     }
 }
 
@@ -206,4 +176,27 @@ private extension ValueBoxView {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         return formatter
     }()
+}
+
+private extension CAShapeLayer {
+    static func makeArrow() -> CAShapeLayer {
+        // Relative to 15x15.
+        let size = CGSize(width: 6, height: 10)
+        let bezierPath = UIBezierPath()
+        bezierPath.move(to: CGPoint(x: 1, y: 1))
+        bezierPath.addLine(to: CGPoint(x: 5, y: 5))
+        bezierPath.addLine(to: CGPoint(x: 1, y: 9))
+        
+        let layer = CAShapeLayer()
+        layer.frame = CGRect(origin: .zero, size: size)
+        
+        layer.path = bezierPath.cgPath
+        layer.strokeColor = UIColor.white.cgColor
+        layer.fillColor = nil
+        layer.lineWidth = 2
+        layer.lineCap = .round
+        layer.lineJoin = .round
+        
+        return layer
+    }
 }

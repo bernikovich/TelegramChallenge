@@ -7,7 +7,11 @@ import UIKit
 
 class PlotLineLayer: CALayer {
     
-    let value: Int64
+    var value: Int64 {
+        didSet {
+            updateText()
+        }
+    }
     let chartType: ChartType
     
     var textColor: UIColor? {
@@ -30,12 +34,16 @@ class PlotLineLayer: CALayer {
         textLayer.fontSize = font.pointSize
         textLayer.alignmentMode = .natural
         textLayer.contentsScale = UIScreen.main.scale
-        textLayer.string = value.abbreviated
         addSublayer(textLayer)
         
         addSublayer(lineLayer)
         
+        updateText()
         updateColors()
+    }
+    
+    private func updateText() {
+        textLayer.string = value.abbreviated
     }
     
     override init(layer: Any) {
@@ -83,7 +91,7 @@ class PlotLineLayer: CALayer {
                 switch chartType {
                 case .lines, .twoLines:
                     textLayer.foregroundColor = theme.lineChartPlotText.cgColor
-                case .bars, .singleBar, .percent:
+                case .bars, .singleBar, .percent, .pie:
                     textLayer.foregroundColor = theme.barChartPlotYAxisText.cgColor
                 }
             }

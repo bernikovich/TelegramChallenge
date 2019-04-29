@@ -13,13 +13,16 @@ private protocol StringRepresentable {
 extension String: StringRepresentable {
     var string: String { return self }
 }
-private class Item: Equatable {
+private class Item: Hashable {
     let content: StringRepresentable
     init(content: StringRepresentable) {
         self.content = content
     }
     static func == (lhs: Item, rhs: Item) -> Bool {
         return lhs === rhs
+    }
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(content.string)
     }
 }
 private class LegendLabel: UILabel {
@@ -29,11 +32,14 @@ private class LegendLabel: UILabel {
         }
     }
     override func sizeToFit() {
-        super.sizeToFit()
-        
-        var rect = frame
-        rect.size.width += 4
-        frame = rect
+        frame = CGRect(origin: .zero, size: CGSize(width: 50, height: 20))
+        // FIXME: It's not correct!
+//        super.sizeToFit()
+//
+//
+//        var rect = frame
+//        rect.size.width += 4
+//        frame = rect
     }
 }
 
@@ -63,9 +69,10 @@ final class LegendView: BaseView {
     }()
     
     private var items: [Item] = []
+    private var itemIndexes: [Item: Int] = [:] // For optimization.
     private var range: ClosedRange<CGFloat> = 0...1
     
-    private let labelsPool = ReusableViewPool<LegendLabel>()
+    private let labelsPool = ReusablePool(creationClosure: { LegendLabel() })
     private var labels: [LegendLabel] = []
     private var fadeLabels: [LegendLabel] = []
     
@@ -98,6 +105,12 @@ final class LegendView: BaseView {
     func setup(with values: [String]) {
         clean()
         items = values.map { Item(content: $0) }
+        
+        var itemIndexes: [Item: Int] = [:]
+        items.enumerated().forEach { index, item in
+            itemIndexes[item] = index
+        }
+        self.itemIndexes = itemIndexes
     }
 
     func update(range: ClosedRange<CGFloat>) {
@@ -118,6 +131,7 @@ final class LegendView: BaseView {
     
     func clean() {
         items = []
+        itemIndexes = [:]
         labels.forEach {
             $0.removeFromSuperview()
             labelsPool.enqueue($0)
@@ -137,12 +151,25 @@ final class LegendView: BaseView {
         helper.append()
 
         let visibleSpace = scrollView.frame.width - scrollView.contentInset.left - scrollView.contentInset.right
+        
+        helper.append()
         let maxSpacing = visibleSpace / Constants.maxSpaceDelimeter
         let minItemsCount = width / maxSpacing
+        
+        helper.append()
         let maxFilterFactor = Double(items.count) / Double(minItemsCount)
-        let filterFactor = Int(pow(Double(2), round(log2(maxFilterFactor))))
-        let filteredItems = items.reversed().enumerated().compactMap { $0.offset % filterFactor == 0 ? $0.element : nil }
-
+        
+        helper.append()
+        let filterFactor = max(1, Int(pow(Double(2), round(log2(maxFilterFactor)))))
+        
+        helper.append()
+        var filteredItems: [Item] = []
+        let numberOfItems = items.count > 0 ? ((items.count - 1) / filterFactor + 1) : 0
+        for index in 0..<numberOfItems {
+            let offset = index * filterFactor
+            filteredItems.append(items[items.count - 1 - offset])
+        }
+        
         helper.append()
         
         let spacing = width / CGFloat(items.count - 1)
@@ -165,11 +192,11 @@ final class LegendView: BaseView {
             let innerT1 = CACurrentMediaTime()
             let label = labelsPool.dequeue()
             
-            let innerT2 = CACurrentMediaTime()
             label.alpha = 0
             label.font = UIFont.systemFont(ofSize: 12)
             label.textAlignment = .center
             
+            let innerT2 = CACurrentMediaTime()
             let innerT3 = CACurrentMediaTime()
             label.item = $0
             
@@ -177,7 +204,9 @@ final class LegendView: BaseView {
             label.sizeToFit()
             
             let innerT5 = CACurrentMediaTime()
-            scrollView.addSubview(label)
+            if label.superview != scrollView {
+                scrollView.addSubview(label)
+            }
             
             let innerT6 = CACurrentMediaTime()
             UIView.animate(withDuration: SharedConstants.animationDuration, animations: {
@@ -232,7 +261,7 @@ final class LegendView: BaseView {
             labelsToRemove.forEach { $0.alpha = 0 }
         }, completion: { [weak self] _ in
             labelsToRemove.forEach {
-                $0.removeFromSuperview()
+                //$0.removeFromSuperview()
                 if let index = self?.fadeLabels.firstIndex(of: $0) {
                     self?.fadeLabels.remove(at: index)
                 }
@@ -242,11 +271,23 @@ final class LegendView: BaseView {
         
         helper.append()
 
+        var p1: TimeInterval = 0
+        var p2: TimeInterval = 0
+        var p3: TimeInterval = 0
         (labels + fadeLabels).forEach { label in
+            let i0 = CACurrentMediaTime()
             let x = CGFloat(indexForLabel(label) ?? 0) * spacing
+            let i1 = CACurrentMediaTime()
             let y = scrollView.frame.height / 2
+            let i2 = CACurrentMediaTime()
             label.center = CGPoint(x: x, y: y)
+            let i3 = CACurrentMediaTime()
+            p1 += i1 - i0
+            p2 += i2 - i1
+            p3 += i3 - i2
         }
+        
+        helper.append()
         
         if helper.longest > 0.01 {
             print("NONO")
@@ -262,7 +303,7 @@ final class LegendView: BaseView {
             return nil
         }
         
-        return items.firstIndex(of: item)
+        return itemIndexes[item]
     }
 
 }
@@ -277,7 +318,7 @@ extension LegendView: AppearanceSupport {
             switch chartType {
             case .lines, .twoLines:
                 $0.textColor = theme.lineChartPlotText
-            case .bars, .singleBar, .percent:
+            case .bars, .singleBar, .percent, .pie:
                 $0.textColor = theme.barChartPlotXAxisText
             }
             

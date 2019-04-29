@@ -10,7 +10,7 @@ class FilterSwitchCollection: BaseView {
     struct Item {
         let switchItems: [FilterSwitch.Item]
         var states: [Bool]
-        let onSelectItem: ((Int) -> Void)
+        let onSelectItem: ((Int) -> Bool) // true on success.
         let onLongPressItem: ((Int) -> Void)
     }
     
@@ -21,6 +21,32 @@ class FilterSwitchCollection: BaseView {
     
     private var item: Item?
     private var previousViews: [FilterSwitch] = []
+    
+    // https://stackoverflow.com/questions/41904724/using-available-with-stored-properties
+    private var storedFeedbackGenerator: Any?
+    @available(iOS 10.0, *)
+    private var feedbackGenerator: UISelectionFeedbackGenerator {
+        if let generator = storedFeedbackGenerator as? UISelectionFeedbackGenerator {
+            return generator
+        }
+        
+        let generator = UISelectionFeedbackGenerator()
+        generator.prepare()
+        storedFeedbackGenerator = generator
+        return generator
+    }
+    private var storedFailureGenerator: Any?
+    @available(iOS 10.0, *)
+    private var failureGenerator: UINotificationFeedbackGenerator {
+        if let generator = storedFeedbackGenerator as? UINotificationFeedbackGenerator {
+            return generator
+        }
+        
+        let generator = UINotificationFeedbackGenerator()
+        generator.prepare()
+        storedFailureGenerator = generator
+        return generator
+    }
     
     private func relayout() {
         previousViews.forEach {
@@ -39,8 +65,13 @@ class FilterSwitchCollection: BaseView {
             let view = FilterSwitch()
             view.setup(with: subitem)
             view.updateState(item.states[index], animated: false)
-            view.onSelect = {
-                item.onSelectItem(index)
+            view.onSelect = { [weak self] in
+                let success = item.onSelectItem(index)
+                if #available(iOS 10.0, *) {
+                    if !success {
+                        self?.failureGenerator.notificationOccurred(.error)
+                    }
+                }
             }
             view.onLongTap = {
                 item.onLongPressItem(index)
@@ -78,8 +109,15 @@ class FilterSwitchCollection: BaseView {
             return
         }
         
+        let isUpdated = item.states != states
         item.states = states
         self.item = item
+        
+        if #available(iOS 10.0, *) {
+            if isUpdated {
+                feedbackGenerator.selectionChanged()
+            }
+        }
         
         if item.states.count == previousViews.count {
             zip(item.states, previousViews).forEach { isSelected, view in

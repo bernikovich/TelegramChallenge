@@ -154,3 +154,24 @@ extension CGSize {
         return CGSize(width: ceil(width), height: ceil(height))
     }
 }
+
+extension CGRect {
+    
+    init(centeredOn center: CGPoint, size: CGSize) {
+        let origin = CGPoint(x: center.x - size.width * 0.5, y: center.y - size.height * 0.5)
+        self.init(origin: origin, size: size)
+    }
+    
+    var center: CGPoint {
+        return CGPoint(
+            x: origin.x + size.width * 0.5, y: origin.y + size.height * 0.5
+        )
+    }
+    
+}
+
+extension CGPoint {
+    func projected(by value: CGFloat, angle: CGFloat) -> CGPoint {
+        return CGPoint(x: x + value * cos(angle), y: y + value * sin(angle))
+    }
+}

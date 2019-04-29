@@ -7,6 +7,7 @@ import UIKit
 
 final class BarChartView: BaseChartView, ChartView {
     
+    private static let plotLineLayersPool = ReusablePool(creationClosure: { PlotLineLayer(value: 0, chartType: .bars) })
     private var plotLineLayers: [PlotLineLayer] = []
     
     private var columnPaths: [Path] = []
@@ -43,7 +44,10 @@ final class BarChartView: BaseChartView, ChartView {
     func clear() {
         hideValueBox(animated: false)
         visibleColumns = []
-        plotLineLayers.forEach { $0.removeFromSuperlayer() }
+        plotLineLayers.forEach {
+            $0.removeFromSuperlayer()
+            type(of: self).plotLineLayersPool.enqueue($0)
+        }
         plotLineLayers = []
         columnLayers.forEach { $0.removeFromSuperlayer() }
         columnLayers = []
@@ -56,9 +60,17 @@ final class BarChartView: BaseChartView, ChartView {
         self.chart = chart
         self.visibleColumns = chart.columns
         self.range = range
-        plotCalculator.updatePreloadedPlots(sum: stackBarSum)
         
+        let helper = DebugHelper()
+        updateSums()
+        helper.append()
+        plotCalculator.updatePreloadedPlots(sum: stackBarSum)
+        helper.append()
         redrawAll(animated: animated)
+        helper.append()
+        if helper.longest > 0.05 {
+            print(":(")
+        }
     }
     
     func setupVisibleColumns(_ visibleColumns: [Column], animated: Bool = true) {
@@ -69,9 +81,8 @@ final class BarChartView: BaseChartView, ChartView {
         hideValueBox(animated: animated)
         self.visibleColumns = visibleColumns
         
+        updateSums()
         updatePaths()
-        
-        let hasData = !visibleColumns.isEmpty
         
         CATransaction.begin()
         CATransaction.setAnimationDuration(animated ? SharedConstants.animationDuration : 0)
@@ -105,10 +116,8 @@ final class BarChartView: BaseChartView, ChartView {
         }
         CATransaction.commit()
         
-        if hasData {
-            plotCalculator.updatePreloadedPlots(sum: stackBarSum)
-            updateWithRange(range, forceReload: true, animated: animated)
-        }
+        plotCalculator.updatePreloadedPlots(sum: stackBarSum)
+        updateWithRange(range, forceReload: true, animated: animated)
     }
     
     func updateWithRange(_ range: ClosedRange<CGFloat>, forceReload: Bool, animated: Bool) {
@@ -188,60 +197,17 @@ final class BarChartView: BaseChartView, ChartView {
                 animation.fromValue = updatedVisibleTransform.transform3D
                 animation.toValue = transform.transform3D
 
-                // CAAnimation doesn't update presentation instantly.
-                // It mean that presentation layer can update
-                // properties with delay.
-                var shouldRemoveAnimation = false
-                if let runningAnimation = layer.runningAnimation, !shouldStartNewAnimation {
-                    // I tried here all (scheduled, startedTimestamp, beginTime,
-                    // converted to CALayer's time beginTime).
-                    // It looks like scheduled is the nearest value to
-                    // the onscreen presentation.
-                    let animationStarted = runningAnimation.scheduled
-                    let elapsedTime = layerTime - animationStarted
-                    var progress = elapsedTime / runningAnimation.duration
-                    progress = min(1, max(0, progress))
-
-                    // Interpolate possible real value based on
-                    // time animation start, it's duration and from/to values.
-                    let fromValue = (runningAnimation.fromValue as! CATransform3D).affineTransform
-                    let toValue = (runningAnimation.toValue as! CATransform3D).affineTransform
-                    let visibleTransform = fromValue.transforming(to: toValue, with: CGFloat(progress))
-                    let updatedVisibleTransform = visibleTransform.applyingHorizontalTransform(horizontalTransform)
-                    animation.fromValue = updatedVisibleTransform.transform3D
-
-                    // NOTE: Shit is here.
-                    // Old phones cannot animate path with large number
-                    // of points correctly. Presentation layer delays updates too much.
-                    let timeLeft = runningAnimation.duration - elapsedTime
-                    if line.values.count < 300 || !UIDevice.isOld {
-                        animation.duration = timeLeft
-                    }
-
-                    if timeLeft < 0 {
-                        shouldRemoveAnimation = true
-                    }
-                }
-
-                // Animation is already finished.
+                
                 CATransaction.performWithoutAnimation {
                     layer.transform = transform.transform3D
                 }
-                if shouldRemoveAnimation {
-                    layer.removeAnimation(forKey: key)
-                } else {
-                    start(animation, on: layer)
-                }
+                start(animation, on: layer)
                 
                 if layer == biggestColumnLayer {
                     CATransaction.performWithoutAnimation {
                         fadeLayer.transform = transform.transform3D
                     }
-                    if shouldRemoveAnimation {
-                        fadeLayer.removeAnimation(forKey: key)
-                    } else {
-                        start(animation, on: fadeLayer)
-                    }
+                    start(animation, on: fadeLayer)
                 }
             } else {
                 layer.removeAnimation(forKey: key)
@@ -260,11 +226,20 @@ final class BarChartView: BaseChartView, ChartView {
     }
     
     func redrawAll(animated: Bool) {
+        let helper = DebugHelper()
         updatePaths()
+        helper.append()
         updatePlot()
+        helper.append()
         redrawVerticalPlot(animated: animated)
+        helper.append()
         redrawLines()
+        helper.append()
         updateWithRange(range, forceReload: false, animated: animated)
+        helper.append()
+        if helper.longest > 0.05 {
+            print("redrawAll")
+        }
     }
     
     @discardableResult
@@ -327,7 +302,7 @@ final class BarChartView: BaseChartView, ChartView {
         }
     }
     
-    private func updatePaths() {
+    private func updateSums() {
         // We expect each column to have exactly same length as others.
         // Should be updated when visible columns change.
         var sumValues = [Int64](repeating: 0, count: chart.legend.values.count)
@@ -339,7 +314,9 @@ final class BarChartView: BaseChartView, ChartView {
         }
         let stackBarSum = StackBarSum(values: sumValues, minValue: sumValues.min(), maxValue: sumValues.max())
         self.stackBarSum = stackBarSum
-        
+    }
+    
+    private func updatePaths() {
         var previousPath: Path?
         columnPaths = chart.columns.map {
             let isVisible = visibleColumns.contains($0)
@@ -360,6 +337,7 @@ final class BarChartView: BaseChartView, ChartView {
         if !animated {
             plotLineLayers.forEach {
                 $0.removeFromSuperlayer()
+                type(of: self).plotLineLayersPool.enqueue($0)
             }
             plotLineLayers.removeAll()
         }
@@ -368,6 +346,9 @@ final class BarChartView: BaseChartView, ChartView {
             $0.removeFromSuperlayer()
         }
         plotLineLayers.removeAll { hiddenLayers.contains($0) }
+        hiddenLayers.forEach {
+            type(of: self).plotLineLayersPool.enqueue($0)
+        }
         
         let oldLineValues = plotLineLayers.map { $0.value }
         let missingValues = plot.lineValues.filter {
@@ -376,10 +357,13 @@ final class BarChartView: BaseChartView, ChartView {
         
         let neededLineLayers = plotLineLayers.filter { plot.lineValues.contains($0.value) }
         let unneededLineLayers = plotLineLayers.filter { !plot.lineValues.contains($0.value) }
-        let newLineLayers: [PlotLineLayer] = missingValues.map {
-            let layer = PlotLineLayer(value: $0, chartType: .bars)
-            layer.opacity = 0
-            layer.zPosition = CGFloat($0)
+        let newLineLayers: [PlotLineLayer] = missingValues.map { value in
+            let layer = type(of: self).plotLineLayersPool.dequeue()
+            CATransaction.performWithoutAnimation {
+                layer.value = value
+                layer.opacity = 0
+                layer.zPosition = CGFloat(value)
+            }
             plotContainerView.layer.addSublayer(layer)
             return layer
         }
@@ -391,33 +375,30 @@ final class BarChartView: BaseChartView, ChartView {
         // TODO: Need to think about ChartView frame update too.
         let height = ceil(plotContainerView.bounds.height / CGFloat(plot.range.upperBound - plot.range.lowerBound) * CGFloat(plot.step))
         allLineLayers.forEach { layer in
-            let oldTransform = layer.transform
-            layer.transform = CATransform3DIdentity
-            layer.frame = CGRect(
-                x: 0,
-                y: plotContainerView.bounds.height - height,
-                width: plotContainerView.bounds.width,
-                height: height
-            )
-            layer.transform = oldTransform
+            CATransaction.performWithoutAnimation {
+                layer.bounds = CGRect(x: 0, y: 0, width: plotContainerView.bounds.width, height: height)
+                layer.position = CGPoint(x: layer.bounds.width / 2, y: plotContainerView.bounds.height - height / 2)
+            }
         }
         
         allLineLayers.forEach { linePlotLayer in
             let transformToValue = transformCalculator.transformForValueLine(value: linePlotLayer.value, plot: plot, boundsHeight: plotContainerView.bounds.height).transform3D
-            guard animated else {
-                linePlotLayer.opacity = 1
-                linePlotLayer.transform = transformToValue
-                return
-            }
             let isNew = newLineLayers.contains(linePlotLayer)
             let isUnneeded = unneededLineLayers.contains(linePlotLayer)
+            let opacityToValue: Float = isUnneeded ? 0 : 1
+            guard animated else {
+                CATransaction.performWithoutAnimation {
+                    linePlotLayer.opacity = opacityToValue
+                    linePlotLayer.transform = transformToValue
+                }
+                return
+            }
             
             var animations: [CAAnimation] = []
             
             let opacityAnimation = CAKeyframeAnimation(keyPath: "opacity")
             
             let opacityFromValue: Float = isNew ? 0.1 : (linePlotLayer.presentation() ?? linePlotLayer).opacity
-            let opacityToValue: Float = isUnneeded ? 0 : 1
             let opacityMidValue: Float = isNew ? 0.4 : opacityToValue
             
             opacityAnimation.values = [opacityFromValue, opacityMidValue, opacityToValue]
@@ -476,6 +457,7 @@ private extension BarChartView {
         let index = Int(round((location.x / columnsContainerView.frame.width) * CGFloat(chart.legend.values.count - 1)))
         let indexRange = chart.legend.indexRange(for: range)
         let safeIndex = indexRange.clamp(index)
+        lastValueBoxIndex = safeIndex
         let x = gesture.location(in: parent).x
         
         let pointWidth = CGFloat(1) / CGFloat(chart.legend.values.count)
@@ -518,6 +500,8 @@ private extension BarChartView {
                 update(handler: oldHandler)
             } else {
                 let handler = ValueBoxViewTransitionsHandler(style: .stacked)
+                handler.view.arrowLayer.isHidden = onSelectDetails == nil
+                addGestureRecognizersToValueBox(handler.view)
                 valueBoxHandler = handler
                 parent.addSubview(handler.view)
                 update(handler: handler)

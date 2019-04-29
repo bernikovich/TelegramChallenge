@@ -7,7 +7,7 @@ import UIKit
 
 enum TrimmerConstants {
 
-    static let minVisibility: CGFloat = 0.15
+    static let minVisibility: CGFloat = 0.10
     static let defaultVisibility: CGFloat = 0.25
     static let maxVisibility: CGFloat = 1
 
