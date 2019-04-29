@@ -61,16 +61,9 @@ final class BarChartView: BaseChartView, ChartView {
         self.visibleColumns = chart.columns
         self.range = range
         
-        let helper = DebugHelper()
         updateSums()
-        helper.append()
         plotCalculator.updatePreloadedPlots(sum: stackBarSum)
-        helper.append()
         redrawAll(animated: animated)
-        helper.append()
-        if helper.longest > 0.05 {
-            print(":(")
-        }
     }
     
     func setupVisibleColumns(_ visibleColumns: [Column], animated: Bool = true) {
@@ -226,20 +219,11 @@ final class BarChartView: BaseChartView, ChartView {
     }
     
     func redrawAll(animated: Bool) {
-        let helper = DebugHelper()
         updatePaths()
-        helper.append()
         updatePlot()
-        helper.append()
         redrawVerticalPlot(animated: animated)
-        helper.append()
         redrawLines()
-        helper.append()
         updateWithRange(range, forceReload: false, animated: animated)
-        helper.append()
-        if helper.longest > 0.05 {
-            print("redrawAll")
-        }
     }
     
     @discardableResult

@@ -20,7 +20,6 @@
 		2FDCCDB92242D56400B69920 /* ValueBoxLineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FDCCDB82242D56400B69920 /* ValueBoxLineView.swift */; };
 		96EB72BB225753BF008C2360 /* GradientView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96EB72BA225753BF008C2360 /* GradientView.swift */; };
 		B01D39A4224178A800B5E8BF /* TransformCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01D39A3224178A800B5E8BF /* TransformCalculator.swift */; };
-		B01D4AF822638A8300C7AA93 /* CoreAnimationExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01D4AF722638A8300C7AA93 /* CoreAnimationExtensions.swift */; };
 		B01D4AFB2263DCCB00C7AA93 /* ChartControlsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01D4AFA2263DCCB00C7AA93 /* ChartControlsView.swift */; };
 		B01D4AFE2264901900C7AA93 /* PieChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01D4AFD2264901900C7AA93 /* PieChartView.swift */; };
 		B01D4B002264947300C7AA93 /* InnerPieChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B01D4AFF2264947300C7AA93 /* InnerPieChartView.swift */; };
@@ -79,7 +78,6 @@
 		2FDCCDB82242D56400B69920 /* ValueBoxLineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueBoxLineView.swift; sourceTree = "<group>"; };
 		96EB72BA225753BF008C2360 /* GradientView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientView.swift; sourceTree = "<group>"; };
 		B01D39A3224178A800B5E8BF /* TransformCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransformCalculator.swift; sourceTree = "<group>"; };
-		B01D4AF722638A8300C7AA93 /* CoreAnimationExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreAnimationExtensions.swift; sourceTree = "<group>"; };
 		B01D4AFA2263DCCB00C7AA93 /* ChartControlsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartControlsView.swift; sourceTree = "<group>"; };
 		B01D4AFD2264901900C7AA93 /* PieChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PieChartView.swift; sourceTree = "<group>"; };
 		B01D4AFF2264947300C7AA93 /* InnerPieChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InnerPieChartView.swift; sourceTree = "<group>"; };
@@ -418,7 +416,6 @@
 				B0F037E32236821F0085ACE6 /* UITableViewExtensions.swift */,
 				B0F0085F22368C2A00E2CD74 /* UIKit.swift */,
 				2F39537A22397C8600AD3673 /* RangeExtensions.swift */,
-				B01D4AF722638A8300C7AA93 /* CoreAnimationExtensions.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -560,7 +557,6 @@
 				2F3B7F49223E5EDD00BF36A0 /* ReusableViewPool.swift in Sources */,
 				B0F037D4223674000085ACE6 /* BaseViewController.swift in Sources */,
 				B0F037B022366AAD0085ACE6 /* AppDelegate.swift in Sources */,
-				B01D4AF822638A8300C7AA93 /* CoreAnimationExtensions.swift in Sources */,
 				B0F008652237C32000E2CD74 /* LineChartView.swift in Sources */,
 				B0F008692237F11D00E2CD74 /* PlotLineLayer.swift in Sources */,
 				B0F037DA223678240085ACE6 /* UIColorExtensions.swift in Sources */,

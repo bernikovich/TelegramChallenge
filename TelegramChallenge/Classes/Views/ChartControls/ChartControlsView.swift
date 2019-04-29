@@ -202,23 +202,13 @@ class ChartControlsView: BaseView, AppearanceSupport {
     }
     
     func setupWith(viewModel: ChartControlsViewModel) {
-        let helper = DebugHelper()
-        
         let chart = viewModel.chart
         self.chart = viewModel.chart
         self.viewModel = viewModel
         
-        helper.append()
-        
         zoomOutView.isHidden = viewModel.onZoomOut == nil
-        
         chartView.setupWithChart(chart, in: viewModel.selectedRange, animated: false)
-        
-        helper.append()
-        
         legendView.setup(with: makeLegend(from: chart.legend.values))
-        
-        helper.append()
         
         viewModel.selectedRangeUpdate = { [weak self] range in
             self?.trimmerView.selectedRange = range
@@ -226,32 +216,17 @@ class ChartControlsView: BaseView, AppearanceSupport {
             self?.updateHeader()
         }
         
-        helper.append()
-        
         trimmerView.drawChart(chart, animated: false)
-        
-        helper.append()
-        
         trimmerView.redraw()
-        
-        helper.append()
         
         updateVisibleColumns(visibleColumns, animated: false)
         viewModel.onLinesEnabledUpdate = { [weak self] in
             self?.updateVisibleColumns(self?.visibleColumns, animated: true)
         }
         
-        helper.append()
-        
         let filterItem = type(of: self).filterItemForViewModel(viewModel)
         filterCollectionView.setup(with: filterItem)
-        
-        helper.append()
-        
-        if helper.longest > 0.1 {
-            print("MUCH LUL")
-        }
-        
+
         setNeedsLayout()
     }
     

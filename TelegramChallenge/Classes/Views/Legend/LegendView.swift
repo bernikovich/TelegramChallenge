@@ -141,28 +141,19 @@ final class LegendView: BaseView {
     }
 
     private func relayoutValues(range: ClosedRange<CGFloat>) {
-        let helper = DebugHelper()
-        
         let width = scrollView.contentSize.width
         guard width > 0 else {
             return
         }
-        
-        helper.append()
 
         let visibleSpace = scrollView.frame.width - scrollView.contentInset.left - scrollView.contentInset.right
         
-        helper.append()
         let maxSpacing = visibleSpace / Constants.maxSpaceDelimeter
         let minItemsCount = width / maxSpacing
-        
-        helper.append()
+
         let maxFilterFactor = Double(items.count) / Double(minItemsCount)
-        
-        helper.append()
         let filterFactor = max(1, Int(pow(Double(2), round(log2(maxFilterFactor)))))
         
-        helper.append()
         var filteredItems: [Item] = []
         let numberOfItems = items.count > 0 ? ((items.count - 1) / filterFactor + 1) : 0
         for index in 0..<numberOfItems {
@@ -170,69 +161,33 @@ final class LegendView: BaseView {
             filteredItems.append(items[items.count - 1 - offset])
         }
         
-        helper.append()
-        
         let spacing = width / CGFloat(items.count - 1)
-
-        var time1: TimeInterval = 0
-        var time2: TimeInterval = 0
-        var time3: TimeInterval = 0
-        var time4: TimeInterval = 0
-        var time5: TimeInterval = 0
-        var time6: TimeInterval = 0
-        var time7: TimeInterval = 0
-        
         let missingLabels: [LegendLabel] = filteredItems.compactMap {
-            let innerT0 = CACurrentMediaTime()
             guard labelForItem($0) == nil else {
-                time1 += CACurrentMediaTime() - innerT0
                 return nil
             }
             
-            let innerT1 = CACurrentMediaTime()
             let label = labelsPool.dequeue()
             
             label.alpha = 0
             label.font = UIFont.systemFont(ofSize: 12)
             label.textAlignment = .center
-            
-            let innerT2 = CACurrentMediaTime()
-            let innerT3 = CACurrentMediaTime()
             label.item = $0
-            
-            let innerT4 = CACurrentMediaTime()
             label.sizeToFit()
-            
-            let innerT5 = CACurrentMediaTime()
             if label.superview != scrollView {
                 scrollView.addSubview(label)
             }
-            
-            let innerT6 = CACurrentMediaTime()
             UIView.animate(withDuration: SharedConstants.animationDuration, animations: {
                 label.alpha = 1
             })
-
-            let innerT7 = CACurrentMediaTime()
-            
-            time1 += innerT1 - innerT0
-            time2 += innerT2 - innerT1
-            time3 += innerT3 - innerT2
-            time4 += innerT4 - innerT3
-            time5 += innerT5 - innerT4
-            time6 += innerT6 - innerT5
-            time7 += innerT7 - innerT6
             
             return label
         }
         
-        helper.append()
         labels += missingLabels
         if !missingLabels.isEmpty {
             apply(theme: Appearance.theme)
         }
-        
-        helper.append()
 
         let labelsToRemove = labels.filter {
             if let item = $0.item {
@@ -242,8 +197,6 @@ final class LegendView: BaseView {
             }
         }
         labels = labels.filter { !labelsToRemove.contains($0) }
-
-        helper.append()
         
         // FIX ME LATER:
         // When quickly scaling chart down legend values overlap.
@@ -253,8 +206,6 @@ final class LegendView: BaseView {
             }
             fadeLabels.removeAll()
         }
-        
-        helper.append()
         
         fadeLabels.append(contentsOf: labelsToRemove)
         UIView.animate(withDuration: SharedConstants.animationDuration, animations: {
@@ -268,29 +219,11 @@ final class LegendView: BaseView {
                 self?.labelsPool.enqueue($0)
             }
         })
-        
-        helper.append()
 
-        var p1: TimeInterval = 0
-        var p2: TimeInterval = 0
-        var p3: TimeInterval = 0
         (labels + fadeLabels).forEach { label in
-            let i0 = CACurrentMediaTime()
             let x = CGFloat(indexForLabel(label) ?? 0) * spacing
-            let i1 = CACurrentMediaTime()
             let y = scrollView.frame.height / 2
-            let i2 = CACurrentMediaTime()
             label.center = CGPoint(x: x, y: y)
-            let i3 = CACurrentMediaTime()
-            p1 += i1 - i0
-            p2 += i2 - i1
-            p3 += i3 - i2
-        }
-        
-        helper.append()
-        
-        if helper.longest > 0.01 {
-            print("NONO")
         }
     }
 

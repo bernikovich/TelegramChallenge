@@ -18,15 +18,10 @@ class PieChartView: BaseChartView, ChartView {
     }
     
     func setupWithChart(_ chart: Chart, in range: ClosedRange<CGFloat>, animated: Bool) {
-        let time = CACurrentMediaTime()
         self.chart = chart
         self.range = range
         self.visibleColumns = chart.columns
         redraw(animated: false)
-        let tim2 = CACurrentMediaTime()
-        if tim2 - time > 0.01 {
-            print(":(")
-        }
     }
     
     func updateWithRange(_ range: ClosedRange<CGFloat>, forceReload: Bool, animated: Bool) {

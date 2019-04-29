@@ -102,8 +102,6 @@ extension StatisticsViewController: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let start = CACurrentMediaTime()
-        
         let section = indexPath.section
         let item = items[section]
         let viewModel = item.mainViewModel
@@ -127,9 +125,6 @@ extension StatisticsViewController: UITableViewDelegate, UITableViewDataSource {
             resultCell = cell
         }
         resultCell.setup(with: item)
-        
-        let end = CACurrentMediaTime()
-        print("cellForRowAt: \(end - start)")
         
         return resultCell
     }
